@@ -1,0 +1,41 @@
+site_name: Tracking ML with Exa.trkX
+site_url: https://hsf-reco-and-software-triggers.github.io/Tracking-ML-Exa.TrkX/
+site_author: Daniel Murnane on behalf of Exa.TrkX Collaboration
+
+
+nav:
+  - Home: index.md
+  - Pipelines:
+    - Overview: pipelines/overview.md
+    - Quickstart: pipelines/quickstart.md
+    - Choosing a template: pipelines/choosingguide.md
+    - "Use Case: TrackML GNN Edge Classification": pipelines/trackmlGNN.md
+    - "Use Case: TrackML Metric Learning": pipelines/trackmlembedding.md
+  - Models:
+    - Overview: models/overview.md
+    - Hyperparameter Guide: models/hpguide.md
+    - Typical Mileage: models/performance.md
+    - Zoology and Taxonomy: models/taxonomy.md
+  - Performance:
+    - Overview: performance/overview.md
+    - Definitions: performance/definitions.md
+    - Use Cases: performance/usage.md
+  - Tools:
+    - Overview: tools/overview.md
+    - Data Manipulation: tools/data.md
+    - Training & Inference: tools/ml.md
+    - PyLightning & MLFlow: tools/frameworks.md
+
+
+
+
+theme:
+  name: material
+  palette:
+    primary: white
+    accent: indigo
+  # logo: media/favicon.png
+  # favicon: media/favicon.ico
+  features:
+    - navigation.tabs
+    - navigation.instant
