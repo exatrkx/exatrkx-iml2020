@@ -7,6 +7,9 @@ from LightningModules.Filter.vanilla_filter import VanillaFilter, FilterInferenc
 from LightningModules.Processing.feature_construction import FeatureStore
 
 
+import yaml
+from exatrkx.processing.feature_construction import FeatureStore
+
 def main():
 
 # ================================== Preprocessing ==========================
