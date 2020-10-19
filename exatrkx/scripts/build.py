@@ -1,24 +1,28 @@
-import torch
-import pytorch_lightning as pl
+import os
 import yaml
-import importlib
-from LightningModules.Embedding.layerless_embedding import LayerlessEmbedding, EmbeddingInferenceCallback
-from LightningModules.Filter.vanilla_filter import VanillaFilter, FilterInferenceCallback
-from LightningModules.Processing.feature_construction import FeatureStore
+from exatrkx import FeatureStore
+import pprint
 
 
-import yaml
-from exatrkx.processing.feature_construction import FeatureStore
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="build a feature storage")
+    add_arg = parser.add_argument
+    add_arg("config", help="configuration file", default=None)
 
-def main():
+    args = parser.parse_args()
+    if args.config is None or not os.path.exists(args.config):
+        print("missing configuration, using default")
+        import pkg_resources
+        config_file = pkg_resources.resource_filename("exatrkx", 'configs/prepare_feature_store.yaml')
+    else:
+        config_file = args.config
 
-# ================================== Preprocessing ==========================
-    with open("LightningModules/Processing/prepare_feature_store.yaml") as f:
+    pp = pprint.PrettyPrinter(indent=4, sort_dicts=False)
+
+    with open(config_file) as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
 
-    preprocess_dm = FeatureStore(config)
-    preprocess_dm.prepare_data()
-
-
-if __name__=="__main__":
-    main()
+    pp.pprint(config)
+    # preprocess_dm = FeatureStore(config)
+    # preprocess_dm.prepare_data()

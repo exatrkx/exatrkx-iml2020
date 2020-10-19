@@ -21,21 +21,13 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
-        #"tensorflow >= 2.2",
-        "torch", "pytorch-lightning",
-        "faiss-gpu"
+        # "tensorflow >= 2.2",
+        "torch",
+        "pytorch-lightning",
+        "faiss-gpu",
         "graph_nets>=1.1",
-        "future",
         "networkx>=2.4",
-        "scipy",
-        "pandas",
-        "setuptools",
-        "matplotlib",
-        'sklearn',
-        'pyyaml>=5.1',
         'trackml@ https://github.com/LAL/trackml-library/tarball/master#egg=trackml-3',
-        'tables',
-        'more-itertools',
     ],
     package_data = {
         "exatrkx": ["config/*.yaml"]
