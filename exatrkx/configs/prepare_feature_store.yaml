@@ -1,10 +1,10 @@
 adjacent: true
 cell_information: true
-endcaps: true
+endcaps: false
 layerless: true
 layerwise: false
 n_files: 10
 n_tasks: 1
 n_workers: 1
 noise: false
-pt_min: 0
+pt_min: 1
