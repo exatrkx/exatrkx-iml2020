@@ -67,10 +67,15 @@ def plot_metrics(odd, tdd, odd_th=0.5, tdd_th=0.5, outname='roc_graph_nets.eps',
         print('Precision (purity):  %.6f' % precision)
         print('Recall (efficiency): %.6f' % recall)
 
+    auc = sklearn.metrics.auc(fpr, tpr)
+    print("AUC: %.4f" % auc)
 
-    fig, axs = plt.subplots(2, 2, figsize=(12, 10), constrained_layout=True)
-    axs = axs.flatten()
-    ax0, ax1, ax2, ax3 = axs
+    
+    # fig, axs = plt.subplots(2, 2, figsize=(12, 10), constrained_layout=True)
+    # axs = axs.flatten()
+    # ax0, ax1, ax2, ax3 = axs
+    fig, axs = plt.subplots(1, 1, figsize=(6, 5))
+    ax0 = axs
 
     # Plot the model outputs
     # binning=dict(bins=50, range=(0,1), histtype='step', log=True)
@@ -80,29 +85,52 @@ def plot_metrics(odd, tdd, odd_th=0.5, tdd_th=0.5, outname='roc_graph_nets.eps',
     ax0.set_xlabel('Model output', fontsize=fontsize)
     ax0.tick_params(width=2, grid_alpha=0.5, labelsize=minor_size)
     ax0.legend(loc=0, fontsize=fontsize)
+    ax0.set_title('ROC curve, AUC = %.4f' % auc, fontsize=fontsize)
 
     # Plot the ROC curve
-    auc = sklearn.metrics.auc(fpr, tpr)
-    ax1.plot(fpr, tpr, lw=2)
-    ax1.plot([0, 1], [0, 1], '--', lw=2)
-    ax1.set_xlabel('False positive rate', fontsize=fontsize)
-    ax1.set_ylabel('True positive rate', fontsize=fontsize)
-    ax1.set_title('ROC curve, AUC = %.4f' % auc, fontsize=fontsize)
-    ax1.tick_params(width=2, grid_alpha=0.5, labelsize=minor_size)
-    print("AUC: %.4f" % auc)
+    # ax1.plot(fpr, tpr, lw=2)
+    # ax1.plot([0, 1], [0, 1], '--', lw=2)
+    # ax1.set_xlabel('False positive rate', fontsize=fontsize)
+    # ax1.set_ylabel('True positive rate', fontsize=fontsize)
+    # ax1.set_title('ROC curve, AUC = %.4f' % auc, fontsize=fontsize)
+    # ax1.tick_params(width=2, grid_alpha=0.5, labelsize=minor_size)
 
-    p, r, t = sklearn.metrics.precision_recall_curve(y_true, odd)
-    ax2.plot(t, p[:-1], label='purity', lw=2)
-    ax2.plot(t, r[:-1], label='efficiency', lw=2)
-    ax2.set_xlabel('Cut on model score', fontsize=fontsize)
-    ax2.tick_params(width=2, grid_alpha=0.5, labelsize=minor_size)
-    ax2.legend(fontsize=fontsize, loc='upper right')
 
-    ax3.plot(p, r, lw=2)
-    ax3.set_xlabel('Purity', fontsize=fontsize)
-    ax3.set_ylabel('Efficiency', fontsize=fontsize)
-    ax3.tick_params(width=2, grid_alpha=0.5, labelsize=minor_size)
+    # p, r, t = sklearn.metrics.precision_recall_curve(y_true, odd)
+    # ax2.plot(t, p[:-1], label='purity', lw=2)
+    # ax2.plot(t, r[:-1], label='efficiency', lw=2)
+    # ax2.set_xlabel('Cut on model score', fontsize=fontsize)
+    # ax2.tick_params(width=2, grid_alpha=0.5, labelsize=minor_size)
+    # ax2.legend(fontsize=fontsize, loc='upper right')
+
+    # ax3.plot(p, r, lw=2)
+    # ax3.set_xlabel('Purity', fontsize=fontsize)
+    # ax3.set_ylabel('Efficiency', fontsize=fontsize)
+    # ax3.tick_params(width=2, grid_alpha=0.5, labelsize=minor_size)
 
     plt.savefig(outname)
     if off_interactive:
         plt.close(fig)
+
+def np_to_nx(array, hits):
+    G = nx.Graph()
+
+    node_features = ['r', 'phi', 'z']
+    feature_scales = [1000, np.pi, 1000]
+
+    used_hits = array['I']
+    df = pd.DataFrame(array['x']*feature_scales, columns=node_features)
+    node_info = [
+        (i, dict(pos=np.array(row), hit_id=array['I'].iloc[i])) for i,row in df.iterrows()
+    ]
+    G.add_nodes_from(node_info)
+
+    receivers = array['receivers']
+    senders = array['senders']
+    score = array['score']
+    truth = array['truth']
+    edge_info = [
+        (i, j, dict(weight=k, solution=l)) for i,j,k,l in zip(senders, receivers, score, truth)
+    ]
+    G.add_edges_from(edge_info)
+    return G

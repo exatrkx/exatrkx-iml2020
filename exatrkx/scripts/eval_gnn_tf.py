@@ -13,14 +13,12 @@ import networkx as nx
 
 from graph_nets import utils_tf
 
-from tfgraphs import graph
-from tfgraphs.model import SegmentClassifier
-
-from tfgraphs import utils
-from heptrkx.dataset import event as master
+from exatrkx import graph
+from exatrkx import SegmentClassifier
+from exatrkx import plot_metrics
+from exatrkx import plot_nx_with_edge_cmaps
 
 ckpt_name = 'checkpoint'
-
 
 if __name__ == "__main__":
     import argparse
@@ -31,9 +29,7 @@ if __name__ == "__main__":
     add_arg("model_dir", help='model directory')
     add_arg("outdir", help='output directory')
     add_arg("--num-iters", help="number of message passing steps", default=8, type=int)
-    add_arg("--evts-per-record", default=5, help="number of events in one tfrecord", type=int)
     add_arg('--inspect', help='inspect intermediate results', action='store_true')
-
 
     args = parser.parse_args()
 
@@ -96,27 +92,24 @@ if __name__ == "__main__":
         hits_pid_nsecs = array['pid'].numpy()
 
         output = os.path.join(args.outdir, "event{}.npz".format(evtid))
-        np.savez(
-            output,
-            receivers=inputs_te.receivers,
-            senders=inputs_te.senders,
-            score=tf.reshape(outputs_te[-1].edges, (-1, )),
-            truth=tf.reshape(targets_te.edges, (-1, )),
-            I=hits_id_nsecs,
-            pid=hits_pid_nsecs
-            )
+        array = {
+            "receivers": inputs_te.receivers,
+            "senders": inputs_te.senders,
+            "score": tf.reshape(outputs_te[-1].edges, (-1, )),
+            "truth": tf.reshape(targets_te.edges, (-1, )),
+            "I": hits_id_nsecs,
+            "pid": hits_pid_nsecs,
+            "x": inputs_te.nodes, 
+        }
+        np.savez(output, **array)
+
         if args.inspect:
-            array = {}
-            array['I'] = hits_id_nsecs
-            array['receivers'] = inputs_te.receivers
-            array['senders'] = inputs_te.senders
-            array['truth'] = tf.reshape(targets_te.edges, (-1, ))
-            event.read(evtid) 
+
             y_test = array['truth']
             for i in range(num_processing_steps_tr):
                 array['score'] = tf.reshape(outputs_te[i].edges, (-1, )).numpy()
                 score =  array['score']
-                utils.plot_metrics(
+                plot_metrics(
                     score, y_test,
                     outname=os.path.join(args.outdir, "event{}_roc_{}.pdf".format(evtid, i)),
                     off_interactive=True
@@ -125,36 +118,36 @@ if __name__ == "__main__":
                 if os.path.exists(nx_filename):
                     G = nx.read_gpickle(nx_filename)
                 else:
-                    G = utils.np_to_nx(array, event.hits)
+                    G = np_to_nx(array)
                     nx.write_gpickle(G, nx_filename)
                 _, ax = plt.subplots(figsize=(8, 8))
-                #utils_plot.plot_nx_with_edge_cmaps(G, weight_name='weight', threshold=0.01, cmaps=plt.get_cmap("bwr"), alpha=0.5, ax=ax)
-                utils_plot.plot_nx_with_edge_cmaps(G, weight_name='weight', threshold=0.01, ax=ax)
-                plt.savefig(os.path.join(args.outdir, "event{}_display_all_{}.png".format(evtid, i)))
-                del ax
+                plot_nx_with_edge_cmaps(G, weight_name='weight', threshold=0.01, ax=ax)
+                plt.savefig(os.path.join(args.outdir, "event{}_display_all_{}.pdf".format(evtid, i)))
+                plt.clf()
+
                 # do truth
                 G1 = nx.Graph()
                 G1.add_nodes_from(G.nodes(data=True))
                 G1.add_edges_from([edge for edge in G.edges(data=True) if edge[2]['solution'] == 1])
                 _, ax = plt.subplots(figsize=(8, 8))
-                utils_plot.plot_nx_with_edge_cmaps(G1, weight_name='weight', threshold=0.01, ax=ax, cmaps=plt.get_cmap("gray"))
-                plt.savefig(os.path.join(args.outdir, "event{}_display_truth_{}.png".format(evtid, i)))
-                del ax
+                plot_nx_with_edge_cmaps(G1, weight_name='weight', threshold=0.01, ax=ax, cmaps=plt.get_cmap("gray"))
+                plt.savefig(os.path.join(args.outdir, "event{}_display_truth_{}.pdf".format(evtid, i)))
+                plt.clf()
+
                 # do fake 
                 G2 = nx.Graph()
                 G2.add_nodes_from(G.nodes(data=True))
                 G2.add_edges_from([edge for edge in G.edges(data=True) if edge[2]['solution'] == 0])
                 _, ax = plt.subplots(figsize=(8, 8))
-                utils_plot.plot_nx_with_edge_cmaps(G2, weight_name='weight', threshold=0.01, ax=ax, cmaps=plt.get_cmap("Greys"))
-                plt.savefig(os.path.join(args.outdir, "event{}_display_fake_{}.png".format(evtid, i)))
-                del ax
-                plt.close("all")
+                plot_nx_with_edge_cmaps(G2, weight_name='weight', threshold=0.01, ax=ax, cmaps=plt.get_cmap("Greys"))
+                plt.savefig(os.path.join(args.outdir, "event{}_display_fake_{}.pdf".format(evtid, i)))
+                plt.clf()
 
     outputs_te = utils_tf.concat(outputs_te_list, axis=0)
     targets_te = utils_tf.concat(targets_te_list, axis=0)
     prediction = tf.reshape(outputs_te.edges, (-1,))
     y_test = tf.reshape(targets_te.edges, (-1, ))
-    utils.plot_metrics(
+    plot_metrics(
         prediction, y_test,
         outname=os.path.join(args.outdir, "roc.pdf"),
         off_interactive=True

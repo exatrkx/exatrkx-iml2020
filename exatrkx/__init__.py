@@ -7,3 +7,9 @@ from exatrkx.src.filter.vanilla_filter import VanillaFilter
 from exatrkx.src.filter.vanilla_filter import FilterInferenceCallback
 
 from exatrkx.src.tfgraphs.dataset_base import DoubletsDataset
+from exatrkx.src.tfgraphs import graph
+from exatrkx.src.tfgraphs.model import SegmentClassifier
+
+from exatrkx.src.tfgraphs.utils import plot_metrics
+from exatrkx.src.tfgraphs.utils import np_to_nx
+from exatrkx.src.tfgraphs.utils import plot_nx_with_edge_cmaps

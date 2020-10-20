@@ -30,8 +30,8 @@ from graph_nets import utils_tf
 from graph_nets import utils_np
 import sonnet as snt
 
-from tfgraphs import graph
-from tfgraphs.model import SegmentClassifier
+from exatrkx import graph
+from exatrkx import SegmentClassifier
 
 prog_name = os.path.basename(sys.argv[0])
 
@@ -54,7 +54,7 @@ def train_and_evaluate(args):
     dist = init_workers(args.distributed)
 
     device = 'CPU'
-    global_batch_size = args.train_batch_size 
+    global_batch_size = 1
     gpus = tf.config.experimental.list_physical_devices("GPU")
     logging.info("found {} GPUs".format(len(gpus)))
 
@@ -72,12 +72,9 @@ def train_and_evaluate(args):
     logging.info("Checkpoints and models saved at {}".format(output_dir))
 
     num_processing_steps_tr = args.num_iters     ## level of message-passing
-    n_epochs = args.num_epochs
+    n_epochs = args.max_epochs
     logging.info("{} epochs with batch size {}".format(n_epochs, global_batch_size))
     logging.info("{} processing steps in the model".format(num_processing_steps_tr))
-    # prepare graphs
-    logging.info("{} Eta bins and {} Phi bins".format(args.num_eta_bins, args.num_phi_bins))
-
     logging.info("I am in hvd rank: {} of  total {} ranks".format(dist.rank, dist.size))
 
     if dist.rank == 0:
@@ -173,12 +170,8 @@ def train_and_evaluate(args):
     def train_epoch(dataset):
         total_loss = 0.
         num_batches = 0
-        #for batch, inputs in enumerate(dataset)
-            #input_tr, target_tr = inputs
-        data_iterator = dataset.as_numpy_iterator()
-        for step in range(10):
-            batch = step
-            input_tr, target_tr = next(data_iterator)
+        for batch, inputs in enumerate(dataset):
+            input_tr, target_tr = inputs
             total_loss += train_step(input_tr, target_tr, batch==0)
             num_batches += 1
         logging.info("total batches: {}".format(num_batches))
@@ -222,22 +215,13 @@ if __name__ == "__main__":
     add_arg("--job-dir", help='location to write checkpoints and export models', required=True)
     add_arg('-d', '--distributed', action='store_true', help='data distributed training')
 
-    add_arg("--train-batch-size", help='batch size for training', default=2, type=int)
-    add_arg("--eval-batch-size", help='batch size for evaluation', default=2, type=int)
     add_arg("--num-iters", help="number of message passing steps", default=8, type=int)
     add_arg("--learning-rate", help='learing rate', default=0.0005, type=float)
-    add_arg("--num-epochs", help='number of epochs', default=1, type=int)
-    add_arg("--model-name", help='model name', default='vary2')
-
-    add_arg("--num-eta-bins", default=1, help='number of eat bins', type=int)
-    add_arg("--num-phi-bins", default=1, help='number of phi bins', type=int)
+    add_arg("--max-epochs", help='number of epochs', default=1, type=int)
 
     add_arg("--real-edge-weight", help='weights for real edges', default=2., type=float)
     add_arg("--fake-edge-weight", help='weights for fake edges', default=1., type=float)
 
-    add_arg('--tpu', help='use tpu', default=None)
-    add_arg("--tpu-cores", help='number of cores in TPU', default=8, type=int)
-    add_arg('--zone', help='gcloud zone for tpu', default='us-central1-b')
     add_arg("-v", "--verbose", help='verbosity', choices=['DEBUG', 'ERROR', 'FATAL', 'INFO', 'WARN'],\
         default="INFO")
     args, _ = parser.parse_known_args()
