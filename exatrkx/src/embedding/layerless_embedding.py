@@ -1,22 +1,22 @@
 # System imports
 import sys
 import os
+import numpy as np
 
 # 3rd party imports
-import pytorch_lightning as pl
-from pytorch_lightning.callbacks import Callback
-from .Embedding_Base import EmbeddingBase
-from torch.nn import Linear
-import torch.nn as nn
-from torch_cluster import radius_graph
+# import pytorch_lightning as pl
 import torch
+import torch.nn as nn
+from torch.nn import Linear
+
+from torch_cluster import radius_graph
 from torch_geometric.data import DataLoader
 
-import numpy as np
+from pytorch_lightning.callbacks import Callback
+
 # Local imports
-from .utils import graph_intersection
-# from .utils import build_edges
-# from .utils import res
+from exatrkx.src.utils_torch import graph_intersection
+from exatrkx.src.embedding.embedding_base import EmbeddingBase
 
 class LayerlessEmbedding(EmbeddingBase):
 
@@ -34,6 +34,7 @@ class LayerlessEmbedding(EmbeddingBase):
         self.emb_layer = nn.Linear(hparams["emb_hidden"], hparams["emb_dim"])
         self.norm = nn.LayerNorm(hparams["emb_hidden"])
         self.act = nn.Tanh()
+
 
     def forward(self, x):
 #         hits = self.normalize(hits)
