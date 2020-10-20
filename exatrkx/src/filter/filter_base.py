@@ -3,22 +3,23 @@ import sys
 import os
 
 # 3rd party imports
-import pytorch_lightning as pl
-from pytorch_lightning import LightningModule
+import numpy as np
 import torch
 from torch.nn import Linear
 import torch.nn.functional as F
 from torch.utils.data import random_split
+from torch.utils.data import Dataset
+
 from torch_geometric.data import DataLoader
 from torch_cluster import radius_graph
-import numpy as np
+
+import pytorch_lightning as pl
+from pytorch_lightning import LightningModule
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Local imports
-from .utils import graph_intersection
-from torch.utils.data import Dataset
-
+from exatrkx.src.utils_torch import graph_intersection
 
 def load_dataset(input_dir, num):
     all_events = os.listdir(input_dir)

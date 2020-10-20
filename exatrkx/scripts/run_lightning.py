@@ -1,37 +1,39 @@
+#!/usr/bin/env python
+
 import os
 import yaml
 import pprint
 
-import pytorch_lightning as pl
-
-from exatrkx import FeatureStore
-
-from exatrkx import LayerlessEmbedding
-from exatrkx import EmbeddingInferenceCallback
-
-from exatrkx import VanillaFilter
-from exatrkx import FilterInferenceCallback
+from pytorch_lightning import Trainer
 
 def build(config, args):
+    from exatrkx import FeatureStore
+
     preprocess_dm = FeatureStore(config)
     preprocess_dm.prepare_data()
 
 def embedding(config, args):
+    from exatrkx import LayerlessEmbedding
+    from exatrkx import EmbeddingInferenceCallback
+
     model = LayerlessEmbedding(config)
     callback_list = [EmbeddingInferenceCallback()]
-    trainer = pl.Trainer.from_argparse_args(args, callbacks=callback_list)
+    trainer = Trainer.from_argparse_args(args, callbacks=callback_list)
     trainer.fit(model)
 
 def filtering(config, args):
-    model = LayerlessEmbedding(config)
-    callback_list = [EmbeddingInferenceCallback()]
-    trainer = pl.Trainer.from_argparse_args(args, callbacks=callback_list)
+    from exatrkx import VanillaFilter
+    from exatrkx import FilterInferenceCallback
+
+    model = VanillaFilter(config)
+    callback_list = [FilterInferenceCallback()]
+    trainer = Trainer.from_argparse_args(args, callbacks=callback_list)
     trainer.fit(model)
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="build a feature storage")
-    parser = pl.Trainer.add_argparse_args(parser)
+    parser = Trainer.add_argparse_args(parser)
 
     add_arg = parser.add_argument
     add_arg('--action', help='which action you want to take', choices=['build', 'embedding', 'filtering'], required=True)

@@ -21,12 +21,11 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
-        # "tensorflow >= 2.2",
+        # "tensorflow",
         "torch",
         "pytorch-lightning",
         "faiss-gpu",
         "graph_nets>=1.1",
-        "networkx>=2.4",
         'trackml@ https://github.com/LAL/trackml-library/tarball/master#egg=trackml-3',
     ],
     package_data = {
@@ -39,6 +38,10 @@ setup(
         "Programming Language :: Python :: 3.7",
     ],
     scripts=[
-
+        'exatrkx/scripts/run_lightning.py',
+        'exatrkx/scripts/convert2tf.py',
+        'exatrkx/scripts/train_gnn_tf.py',
+        'exatrkx/scripts/eval_gnn_tf.py',
+        'exatrkx/scripts/tracks_from_gnn.py',
     ],
 )

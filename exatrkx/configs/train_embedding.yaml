@@ -6,6 +6,7 @@ overwrite: True
 n_workers: 1
 
 # Dataset parameters
+pt_min: 0
 train_split: [6, 2, 2] # Number of [training, validation, testing] examples
 endcaps: True
 layerwise: False
@@ -22,7 +23,7 @@ weight: 4
 randomisation: 2
 clustering: build_edges  # or radius_graph
 r_train: 1
-r_val: 0.5
+r_val: 1.5
 knn_train: 20
 knn_val: 100
 warmup: 500
@@ -34,5 +35,5 @@ regime:
     - rp # Random pairs: Trains with pairs in hinge loss selected randomly
     - hnm # Hard negative mining: Trains with
     - ci
-max_epochs: 100
+max_epochs: 2
 wandb_save_dir: /mnt/d/Documents/MachineLearning/ExaTrkx/IML2020/trained_results

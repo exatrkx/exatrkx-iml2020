@@ -6,7 +6,7 @@ filter_cut: 0.5
 
 # Dataset parameters
 pt_min: 0
-train_split: [80, 10, 10] # Number of [training, validation, testing] examples
+train_split: [8, 1, 1] # Number of [training, validation, testing] examples
 endcaps: True
 layerwise: False
 layerless: True
