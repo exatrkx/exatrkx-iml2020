@@ -17,6 +17,7 @@ from exatrkx import graph
 from exatrkx import SegmentClassifier
 from exatrkx import plot_metrics
 from exatrkx import plot_nx_with_edge_cmaps
+from exatrkx import np_to_nx
 
 ckpt_name = 'checkpoint'
 
@@ -30,8 +31,14 @@ if __name__ == "__main__":
     add_arg("outdir", help='output directory')
     add_arg("--num-iters", help="number of message passing steps", default=8, type=int)
     add_arg('--inspect', help='inspect intermediate results', action='store_true')
+    add_arg("--overwrite", help="overwrite the output", action='store_true')
 
     args = parser.parse_args()
+
+    gpus = tf.config.experimental.list_physical_devices("GPU")
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
+
 
     filenames = tf.io.gfile.glob(args.input_data)
     nevts = 1
@@ -74,6 +81,10 @@ if __name__ == "__main__":
     targets_te_list = []
     ievt = 0
     for inputs in dataset.take(nevts).as_numpy_iterator():
+        evtid = evtids[ievt]
+        print("processing event {}".format(evtid))
+
+
         inputs_te, targets_te = inputs
         outputs_te = model(inputs_te, num_processing_steps_tr)
         
@@ -83,15 +94,14 @@ if __name__ == "__main__":
         outputs_te_list.append(output_graph)
         targets_te_list.append(target_graph)
 
-        evtid = evtids[ievt]
-        print("processing event {}".format(evtid))
+
 
         filter_file = os.path.join(args.filter_dir, "{}".format(evtid))
         array = torch.load(filter_file, map_location='cpu')
         hits_id_nsecs = array['hid'].numpy()
         hits_pid_nsecs = array['pid'].numpy()
 
-        output = os.path.join(args.outdir, "event{}.npz".format(evtid))
+        
         array = {
             "receivers": inputs_te.receivers,
             "senders": inputs_te.senders,
@@ -101,47 +111,56 @@ if __name__ == "__main__":
             "pid": hits_pid_nsecs,
             "x": inputs_te.nodes, 
         }
-        np.savez(output, **array)
+
+        output = os.path.join(args.outdir, "event{}.npz".format(evtid))
+        if not os.path.exists(output) or args.overwrite:
+            np.savez(output, **array)
+
+        print("{:,} nodes".format(array['x'].shape[0]))
+        print("{:,} edges".format(array['senders'].shape[0]))
 
         if args.inspect:
-
             y_test = array['truth']
             for i in range(num_processing_steps_tr):
-                array['score'] = tf.reshape(outputs_te[i].edges, (-1, )).numpy()
-                score =  array['score']
+                print("running {} message passing".format(i))
+                score = tf.reshape(outputs_te[i].edges, (-1, )).numpy()
                 plot_metrics(
                     score, y_test,
                     outname=os.path.join(args.outdir, "event{}_roc_{}.pdf".format(evtid, i)),
                     off_interactive=True
                 )
-                nx_filename = os.path.join(args.outdir, "event{}_nx_{}.pkl".format(evtid, i))
-                if os.path.exists(nx_filename):
-                    G = nx.read_gpickle(nx_filename)
-                else:
-                    G = np_to_nx(array)
-                    nx.write_gpickle(G, nx_filename)
-                _, ax = plt.subplots(figsize=(8, 8))
-                plot_nx_with_edge_cmaps(G, weight_name='weight', threshold=0.01, ax=ax)
-                plt.savefig(os.path.join(args.outdir, "event{}_display_all_{}.pdf".format(evtid, i)))
-                plt.clf()
+                # nx_filename = os.path.join(args.outdir, "event{}_nx_{}.pkl".format(evtid, i))
+                # if os.path.exists(nx_filename):
+                #     G = nx.read_gpickle(nx_filename)
+                # else:
+                #     G = np_to_nx(array)
+                #     nx.write_gpickle(G, nx_filename)
+                # _, ax = plt.subplots(figsize=(8, 8))
+                # plot_nx_with_edge_cmaps(G, weight_name='weight', threshold=0.01, ax=ax)
+                # plt.savefig(os.path.join(args.outdir, "event{}_display_all_{}.pdf".format(evtid, i)))
+                # plt.clf()
 
-                # do truth
-                G1 = nx.Graph()
-                G1.add_nodes_from(G.nodes(data=True))
-                G1.add_edges_from([edge for edge in G.edges(data=True) if edge[2]['solution'] == 1])
-                _, ax = plt.subplots(figsize=(8, 8))
-                plot_nx_with_edge_cmaps(G1, weight_name='weight', threshold=0.01, ax=ax, cmaps=plt.get_cmap("gray"))
-                plt.savefig(os.path.join(args.outdir, "event{}_display_truth_{}.pdf".format(evtid, i)))
-                plt.clf()
+                # # do truth
+                # G1 = nx.Graph()
+                # G1.add_nodes_from(G.nodes(data=True))
+                # G1.add_edges_from([edge for edge in G.edges(data=True) if edge[2]['solution'] == 1])
+                # _, ax = plt.subplots(figsize=(8, 8))
+                # plot_nx_with_edge_cmaps(G1, weight_name='weight', threshold=0.01, ax=ax, cmaps=plt.get_cmap("gray"))
+                # plt.savefig(os.path.join(args.outdir, "event{}_display_truth_{}.pdf".format(evtid, i)))
+                # plt.clf()
 
-                # do fake 
-                G2 = nx.Graph()
-                G2.add_nodes_from(G.nodes(data=True))
-                G2.add_edges_from([edge for edge in G.edges(data=True) if edge[2]['solution'] == 0])
-                _, ax = plt.subplots(figsize=(8, 8))
-                plot_nx_with_edge_cmaps(G2, weight_name='weight', threshold=0.01, ax=ax, cmaps=plt.get_cmap("Greys"))
-                plt.savefig(os.path.join(args.outdir, "event{}_display_fake_{}.pdf".format(evtid, i)))
-                plt.clf()
+                # # do fake 
+                # G2 = nx.Graph()
+                # G2.add_nodes_from(G.nodes(data=True))
+                # G2.add_edges_from([edge for edge in G.edges(data=True) if edge[2]['solution'] == 0])
+                # _, ax = plt.subplots(figsize=(8, 8))
+                # plot_nx_with_edge_cmaps(G2, weight_name='weight', threshold=0.01, ax=ax, cmaps=plt.get_cmap("Greys"))
+                # plt.savefig(os.path.join(args.outdir, "event{}_display_fake_{}.pdf".format(evtid, i)))
+                # plt.clf()
+
+    outplot = os.path.join(args.outdir, "roc.pdf")
+    if os.path.exists(outplot) and not args.overwrite:
+       exit(0)
 
     outputs_te = utils_tf.concat(outputs_te_list, axis=0)
     targets_te = utils_tf.concat(targets_te_list, axis=0)
@@ -149,6 +168,6 @@ if __name__ == "__main__":
     y_test = tf.reshape(targets_te.edges, (-1, ))
     plot_metrics(
         prediction, y_test,
-        outname=os.path.join(args.outdir, "roc.pdf"),
+        outname=outplot,
         off_interactive=True
         )

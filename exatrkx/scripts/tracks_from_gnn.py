@@ -33,7 +33,8 @@ if __name__ == "__main__":
     used_hits = array['I']
     hits = hits[hits.hit_id.isin(used_hits)]
     n_nodes = array['I'].shape[0]
-    print("after filtering", hits.shape)
+    # print("after filtering", hits.shape)
+    # print("edges: {}".format(array['score'].shape[0]))
 
     hit_id = hits.hit_id.to_numpy()
 
@@ -61,7 +62,8 @@ if __name__ == "__main__":
         tracks = pd.DataFrame.from_dict({"hit_id": new_hit_id, "track_id": track_labels.track_id})
         return tracks
 
-    pure_edges = array['score'] > 0.2
+    pure_edges = array['score'] > 0
+    # print(pure_edges.shape, np.sum(pure_edges))
     input_matrix = prepare(array['score'][pure_edges], array['senders'][pure_edges], array['receivers'][pure_edges], n_nodes)
     predicted_tracks = clustering(input_matrix, epsilon=0.25, min_samples=2)
     print(predicted_tracks.shape)

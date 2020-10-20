@@ -3,6 +3,7 @@ import sklearn.metrics
 
 import networkx as nx
 import numpy as np
+import pandas as pd
 
 fontsize=16
 minor_size=14
@@ -70,7 +71,7 @@ def plot_metrics(odd, tdd, odd_th=0.5, tdd_th=0.5, outname='roc_graph_nets.eps',
     auc = sklearn.metrics.auc(fpr, tpr)
     print("AUC: %.4f" % auc)
 
-    
+
     # fig, axs = plt.subplots(2, 2, figsize=(12, 10), constrained_layout=True)
     # axs = axs.flatten()
     # ax0, ax1, ax2, ax3 = axs
@@ -112,16 +113,15 @@ def plot_metrics(odd, tdd, odd_th=0.5, tdd_th=0.5, outname='roc_graph_nets.eps',
     if off_interactive:
         plt.close(fig)
 
-def np_to_nx(array, hits):
+def np_to_nx(array):
     G = nx.Graph()
 
     node_features = ['r', 'phi', 'z']
     feature_scales = [1000, np.pi, 1000]
 
-    used_hits = array['I']
     df = pd.DataFrame(array['x']*feature_scales, columns=node_features)
     node_info = [
-        (i, dict(pos=np.array(row), hit_id=array['I'].iloc[i])) for i,row in df.iterrows()
+        (i, dict(pos=np.array(row), hit_id=array['I'][i])) for i,row in df.iterrows()
     ]
     G.add_nodes_from(node_info)
 
