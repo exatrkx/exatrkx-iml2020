@@ -17,7 +17,7 @@ except KeyError as e:
 
 # print("Input: {}".format(inputdir))
 # print("Output: {}".format(output_base))
-detector_path = os.path.join(input_dir, '..', 'detectors.csv')
+detector_path = os.path.join(inputdir, '..', 'detectors.csv')
 
 feature_outdir   = os.path.join(output_base, "feature_store")
 embedding_outdir = os.path.join(output_base, "embedding_output")
