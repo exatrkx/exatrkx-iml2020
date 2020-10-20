@@ -22,8 +22,8 @@ class FeatureStore(LightningDataModule):
         super().__init__()
         self.hparams = hparams
 
-        self.input_dir = utils_dir.inputdir
-        self.output_dir = utils_dir.feature_outdir
+        self.hparams['input_dir'] = self.input_dir = utils_dir.inputdir
+        self.hparams['output_dir'] = self.output_dir = utils_dir.feature_outdir
         self.detector_path = utils_dir.detector_path
         self.n_files = self.hparams['n_files']
 
@@ -51,5 +51,6 @@ class FeatureStore(LightningDataModule):
 
         # Process input files with a worker pool
         with mp.Pool(processes=self.n_workers) as pool:
-            process_func = partial(prepare_event, detector_orig=detector_orig, detector_proc=detector_proc, cell_features=cell_features, **self.hparams)
+            process_func = partial(prepare_event, detector_orig=detector_orig, detector_proc=detector_proc,
+                                cell_features=cell_features, **self.hparams)
             pool.map(process_func, all_events)

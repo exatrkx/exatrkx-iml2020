@@ -64,7 +64,9 @@ if __name__ == "__main__":
     if args.config is None or not os.path.exists(args.config):
         print("missing configuration, using default")
         import pkg_resources
-        config_file = pkg_resources.resource_filename("exatrkx", os.path.join('configs', config_dict[args.action]))
+        config_file = pkg_resources.resource_filename(
+                            "exatrkx",
+                            os.path.join('configs', config_dict[args.action]))
     else:
         config_file = args.config
 

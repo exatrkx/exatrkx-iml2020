@@ -84,7 +84,8 @@ def select_hits(hits, truth, particles, pt_min=0, endcaps=False, noise=False):
 #     ]
     return hits
 
-def build_event(event_file, pt_min, feature_scale, adjacent=True, endcaps=False, layerless=True, layerwise=True, noise=False):
+def build_event(event_file, pt_min, feature_scale, adjacent=True,
+                endcaps=False, layerless=True, layerwise=True, noise=False):
     # Get true edge list using the ordering by R' = distance from production vertex of each particle
     hits, particles, truth = trackml.dataset.load_event(
         event_file, parts=['hits', 'particles', 'truth'])
@@ -120,9 +121,14 @@ def build_event(event_file, pt_min, feature_scale, adjacent=True, endcaps=False,
         if adjacent: layerwise_true_edges = layerwise_true_edges[:, (layers[layerwise_true_edges[1]] - layers[layerwise_true_edges[0]] == 1)]
         print("Layerwise truth graph built for", event_file, "with size", layerwise_true_edges.shape)
 
-    return hits[['r', 'phi', 'z']].to_numpy() / feature_scale, hits.particle_id.to_numpy(), layers, layerless_true_edges, layerwise_true_edges, hits['hit_id'].to_numpy()
+    return hits[['r', 'phi', 'z']].to_numpy() / feature_scale,
+           hits.particle_id.to_numpy(), layers, layerless_true_edges,
+           layerwise_true_edges, hits['hit_id'].to_numpy()
 
-def prepare_event(event_file, detector_orig, detector_proc, cell_features, output_dir=None, pt_min=0, adjacent=True, endcaps=False, layerless=True, layerwise=True, noise=False, cell_information=True, **kwargs):
+def prepare_event(
+            event_file, detector_orig, detector_proc, cell_features, output_dir=None,
+            pt_min=0, adjacent=True, endcaps=False, layerless=True, layerwise=True,
+            noise=False, cell_information=True, **kwargs):
 
     evtid = int(event_file[-9:])
 
@@ -130,9 +136,12 @@ def prepare_event(event_file, detector_orig, detector_proc, cell_features, outpu
 
     feature_scale = [1000, np.pi, 1000]
 
-    X, pid, layers, layerless_true_edges, layerwise_true_edges, hid = build_event(event_file, pt_min, feature_scale, adjacent=adjacent, endcaps=endcaps, layerless=layerless, layerwise=layerwise, noise=noise)
+    X, pid, layers, layerless_true_edges, layerwise_true_edges, hid = build_event(
+                                        event_file, pt_min, feature_scale, adjacent=adjacent,
+                                        endcaps=endcaps, layerless=layerless, layerwise=layerwise, noise=noise)
 
-    data = Data(x = torch.from_numpy(X).float(), pid = torch.from_numpy(pid), layers=torch.from_numpy(layers), event_file=event_file, hid = torch.from_numpy(hid))
+    data = Data(x=torch.from_numpy(X).float(), pid=torch.from_numpy(pid),
+                layers=torch.from_numpy(layers), event_file=event_file, hid=torch.from_numpy(hid))
     if layerless_true_edges is not None: data.layerless_true_edges = torch.from_numpy(layerless_true_edges)
     if layerwise_true_edges is not None: data.layerwise_true_edges = torch.from_numpy(layerwise_true_edges)
 

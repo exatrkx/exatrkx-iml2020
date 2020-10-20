@@ -11,6 +11,7 @@ pip install --upgrade pip
 ```
 Dependencies not listed in the `setup.py` are tabulated below. We are referring to their webpage for detailed installation instructions.
 
+* [pytorch](https://pytorch.org/get-started/locally/) for embedding learning and filtering
 * [torch-geometric](https://github.com/rusty1s/pytorch_geometric#installation) 
 * [tensorflow](https://www.tensorflow.org/install) for GNN
 * [horovod](https://github.com/horovod/horovod#install) for distributed training
