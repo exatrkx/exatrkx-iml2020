@@ -5,6 +5,7 @@ import yaml
 import pprint
 
 from pytorch_lightning import Trainer
+from exatrkx.src import utils_dir
 
 def build(config, args):
     from exatrkx import FeatureStore
@@ -50,6 +51,12 @@ if __name__ == "__main__":
         'embedding': 'train_embedding.yaml', 
         'filtering': 'train_filter.yaml',
     }
+    outdir_dict = {
+        "build": utils_dir.feature_outdir,
+        'embedding': utils_dir.embedding_outdir,
+        'filtering': utils_dir.filtering_outdir,
+    }
+
     print("Action **{}** is chosen".format(args.action))
     if args.no_gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = ''
@@ -74,6 +81,9 @@ if __name__ == "__main__":
     ctn = input("Continue? [y/n]: ")
 
     if ctn.lower() == "y":
+        with open(os.path.join(outdir_dict[args.action], config_file), 'w') as f:
+            yaml.dump(config, f)
+
         eval(args.action)(config, args)
     else:
         parser.print_help()
