@@ -1,12 +1,10 @@
-# Input/output configuration
+adjacent: true
+cell_information: true
+endcaps: true
+layerless: true
+layerwise: false
 n_files: 10
 n_tasks: 1
-n_workers: 2
-
+n_workers: 1
+noise: false
 pt_min: 0
-endcaps: True
-noise: False
-adjacent: True
-layerless: True
-layerwise: False
-cell_information: True

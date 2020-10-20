@@ -139,7 +139,11 @@ def prepare_event(
             pt_min=0, adjacent=True, endcaps=False, layerless=True, layerwise=True,
             noise=False, cell_information=True, **kwargs):
 
-    evtid = int(event_file[-9:])
+    try:
+        evtid = int(event_file[-9:])
+    except ValueError:
+        print("Invalid input:", event_file)
+        return None
 
     print("Preparing", evtid)
 

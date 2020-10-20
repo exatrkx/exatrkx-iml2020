@@ -206,11 +206,15 @@ def get_one_event(event_path,
     print("Loading event {} with a {} pT cut".format(event_path, pt_cut))
 
     hits, cells, particles, truth = trackml.dataset.load_event(event_path)
-    particles.loc[particles.shape[0]] = np.array([0, 0, 0, 0, 10, 10, 10, 0, 1000])
+    # add an ad-hoc particle for noise hits
+    # particle-id, vx, vy, vz, px, py, pz, charge, nhits
+    # the pT is set to a very large number so that when 
+    # applying for an pT cut, the noises are not removed
+    # but still they can be removed by requiring pid > 0
+    particles.loc[particles.shape[0]] = np.array([0, 0, 0, 0, 100, 100, 100, 0, 1000])
 
-    pt = np.sqrt(particles.px**2 + particles.py**2 + particles.pz**2)
+    pt = np.sqrt(particles.px**2 + particles.py**2)
     particles = particles.assign(pt=pt)
-    print(pt[-1])
 
     if remove_noise:
         hits, cells, truth = (hits, cells, truth)
