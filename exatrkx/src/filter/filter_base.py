@@ -20,6 +20,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Local imports
 from exatrkx.src.utils_torch import graph_intersection
+from exatrkx.src import utils_dir
 
 def load_dataset(input_dir, num):
     all_events = os.listdir(input_dir)
@@ -37,6 +38,8 @@ class FilterBase(LightningModule):
         '''
         # Assign hyperparameters
         self.hparams = hparams
+        self.hparams['input_dir'] = utils_dir.embedding_outdir
+        self.hparams['output_dir'] = utils_dir.filtering_outdir
         datatypes = ["train", "val", "test"]
         input_dirs = [os.path.join(self.hparams["input_dir"], datatype) for datatype in datatypes]
         self.trainset, self.valset, self.testset = [load_dataset(input_dir, hparams["train_split"][i]) for i, input_dir in enumerate(input_dirs)]

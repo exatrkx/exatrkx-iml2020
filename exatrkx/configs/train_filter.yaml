@@ -1,7 +1,4 @@
 # Input/output configuration
-input_dir: /global/cscratch1/sd/danieltm/ExaTrkX/trackml_processed/embedding_processed/0_pt_cut_endcaps
-output_dir: /global/cscratch1/sd/danieltm/ExaTrkX/trackml_processed/filter_processed/0_pt_cut_endcaps
-project: FilteringStudy
 filter_cut: 0.5
 
 # Dataset parameters

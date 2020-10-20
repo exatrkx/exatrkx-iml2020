@@ -14,6 +14,7 @@ import torch.nn as nn
 # Local imports
 from .utils import prepare_event
 from .cell_direction_utils.utils import load_detector
+from exatrkx.src import utils_dir
 
 class FeatureStore(LightningDataModule):
 
@@ -21,9 +22,9 @@ class FeatureStore(LightningDataModule):
         super().__init__()
         self.hparams = hparams
 
-        self.input_dir = self.hparams['input_dir']
-        self.output_dir = self.hparams['output_dir']
-        self.detector_path = self.hparams["detector_path"]
+        self.input_dir = utils_dir.inputdir
+        self.output_dir = utils_dir.feature_outdir
+        self.detector_path = utils_dir.detector_path
         self.n_files = self.hparams['n_files']
 
         self.n_tasks = self.hparams['n_tasks']

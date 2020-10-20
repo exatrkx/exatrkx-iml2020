@@ -14,5 +14,3 @@ Dependencies not listed in the `setup.py` are tabulated below. We are referring 
 * [torch-geometric](https://github.com/rusty1s/pytorch_geometric#installation) 
 * [tensorflow](https://www.tensorflow.org/install) for GNN
 * [horovod](https://github.com/horovod/horovod#install) for distributed training
-
-

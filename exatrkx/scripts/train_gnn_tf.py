@@ -32,6 +32,7 @@ import sonnet as snt
 
 from exatrkx import graph
 from exatrkx import SegmentClassifier
+from exatrkx.src import utils_dir
 
 prog_name = os.path.basename(sys.argv[0])
 
@@ -66,7 +67,7 @@ def train_and_evaluate(args):
     if gpus and args.distributed:
         tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
 
-    output_dir = args.job_dir
+    output_dir = utils_dir.gnn_models
     if dist.rank == 0:
         os.makedirs(output_dir, exist_ok=True)
     logging.info("Checkpoints and models saved at {}".format(output_dir))
@@ -78,8 +79,8 @@ def train_and_evaluate(args):
     logging.info("I am in hvd rank: {} of  total {} ranks".format(dist.rank, dist.size))
 
     if dist.rank == 0:
-        train_files = tf.io.gfile.glob(args.train_files)
-        eval_files = tf.io.gfile.glob(args.eval_files)
+        train_files = tf.io.gfile.glob(os.path.join(utils_dir.gnn_inputs, 'train', "*"))
+        eval_files = tf.io.gfile.glob(os.path.join(utils_dir.gnn_inputs, 'val', "*"))
         ## split the number of files evenly to all ranks
         train_files = [x.tolist() for x in np.array_split(train_files, dist.size)]
         eval_files = [x.tolist() for x in np.array_split(eval_files, dist.size)]
@@ -210,11 +211,7 @@ def train_and_evaluate(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train nx-graph with configurations')
     add_arg = parser.add_argument
-    add_arg("--train-files", help='path to training data', required=True)
-    add_arg("--eval-files", help='path to evaluation data', required=True)
-    add_arg("--job-dir", help='location to write checkpoints and export models', required=True)
     add_arg('-d', '--distributed', action='store_true', help='data distributed training')
-
     add_arg("--num-iters", help="number of message passing steps", default=8, type=int)
     add_arg("--learning-rate", help='learing rate', default=0.0005, type=float)
     add_arg("--max-epochs", help='number of epochs', default=1, type=int)

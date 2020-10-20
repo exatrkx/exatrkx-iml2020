@@ -19,6 +19,7 @@ from exatrkx.src import utils_torch
 from exatrkx.src.utils_torch import graph_intersection
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+from exatrkx.src import utils_dir
 
 def load_datasets(input_dir, train_split, seed = 0):
     '''
@@ -42,6 +43,8 @@ class EmbeddingBase(LightningModule):
         '''
         # Assign hyperparameters
         self.hparams = hparams
+        self.hparams['input_dir'] = utils_dir.feature_outdir
+        self.hparams['output_dir'] = utils_dir.embedding_outdir
         self.trainset, self.valset, self.testset = load_datasets(self.hparams["input_dir"], self.hparams["train_split"])
         self.clustering = getattr(utils_torch, hparams['clustering'])
 

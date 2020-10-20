@@ -38,9 +38,6 @@ if __name__ == "__main__":
     add_arg = parser.add_argument
     add_arg('--action', help='which action you want to take', choices=['build', 'embedding', 'filtering'], required=True)
     add_arg("--config", help="configuration file", default=None)
-    add_arg("--input-dir", help="input directory", default=None)
-    add_arg("--output-dir", help='output directory', default=None)
-    add_arg("--detector-path", help='detector file path', default=None)
     add_arg("--n-files", help='number of files to process', default=None, type=int)
     add_arg('--n-workers', help='number of workers/threads', default=None, type=int)
     add_arg("--pt-min", help='minimum pT', default=None, type=float)

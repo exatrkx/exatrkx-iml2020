@@ -18,6 +18,7 @@ from exatrkx import SegmentClassifier
 from exatrkx import plot_metrics
 from exatrkx import plot_nx_with_edge_cmaps
 from exatrkx import np_to_nx
+from exatrkx.src import utils_dir
 
 ckpt_name = 'checkpoint'
 
@@ -25,13 +26,10 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Evaluate trained GNN model")
     add_arg = parser.add_argument
-    add_arg("input_data", help='input tfrec data')
-    add_arg("filter_dir", help='filtering directory')
-    add_arg("model_dir", help='model directory')
-    add_arg("outdir", help='output directory')
     add_arg("--num-iters", help="number of message passing steps", default=8, type=int)
     add_arg('--inspect', help='inspect intermediate results', action='store_true')
     add_arg("--overwrite", help="overwrite the output", action='store_true')
+    add_arg("--max-evts", help='process maximum number of events', type=int, default=1)
 
     args = parser.parse_args()
 
@@ -40,13 +38,12 @@ if __name__ == "__main__":
         tf.config.experimental.set_memory_growth(gpu, True)
 
 
-    filenames = tf.io.gfile.glob(args.input_data)
-    nevts = 1
+    filenames = tf.io.gfile.glob(os.path.join(utils_dir.gnn_inputs, "test", "*"))
+    nevts = args.max_evts
+    outdir = utils_dir.gnn_output
     print("Input file names:", filenames)
     print("In total", len(filenames), "files")
     print("Process", nevts, "events")
-    if not "gs://" in args.outdir:
-        os.makedirs(args.outdir, exist_ok=True)
 
     # load data
     raw_dataset = tf.data.TFRecordDataset(filenames)
@@ -65,7 +62,7 @@ if __name__ == "__main__":
     optimizer = snt.optimizers.Adam(0.001)
     model = SegmentClassifier()
 
-    output_dir = args.model_dir
+    output_dir = utils_dir.gnn_models
     checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
     ckpt_manager = tf.train.CheckpointManager(checkpoint, directory=output_dir, max_to_keep=5)
     if os.path.exists(os.path.join(output_dir, ckpt_name)):
@@ -81,7 +78,7 @@ if __name__ == "__main__":
     targets_te_list = []
     ievt = 0
     for inputs in dataset.take(nevts).as_numpy_iterator():
-        evtid = evtids[ievt]
+        evtid = int(filenames[ievt])
         print("processing event {}".format(evtid))
 
 
@@ -94,13 +91,10 @@ if __name__ == "__main__":
         outputs_te_list.append(output_graph)
         targets_te_list.append(target_graph)
 
-
-
-        filter_file = os.path.join(args.filter_dir, "{}".format(evtid))
+        filter_file = os.path.join(utils_dir.filtering_outdir, 'test', "{}".format(evtid))
         array = torch.load(filter_file, map_location='cpu')
         hits_id_nsecs = array['hid'].numpy()
         hits_pid_nsecs = array['pid'].numpy()
-
         
         array = {
             "receivers": inputs_te.receivers,
@@ -112,7 +106,7 @@ if __name__ == "__main__":
             "x": inputs_te.nodes, 
         }
 
-        output = os.path.join(args.outdir, "event{}.npz".format(evtid))
+        output = os.path.join(outdir, "{}".format(evtid))
         if not os.path.exists(output) or args.overwrite:
             np.savez(output, **array)
 
@@ -126,10 +120,10 @@ if __name__ == "__main__":
                 score = tf.reshape(outputs_te[i].edges, (-1, )).numpy()
                 plot_metrics(
                     score, y_test,
-                    outname=os.path.join(args.outdir, "event{}_roc_{}.pdf".format(evtid, i)),
+                    outname=os.path.join(outdir, "event{}_roc_{}.pdf".format(evtid, i)),
                     off_interactive=True
                 )
-                # nx_filename = os.path.join(args.outdir, "event{}_nx_{}.pkl".format(evtid, i))
+                # nx_filename = os.path.join(outdir, "event{}_nx_{}.pkl".format(evtid, i))
                 # if os.path.exists(nx_filename):
                 #     G = nx.read_gpickle(nx_filename)
                 # else:
@@ -137,7 +131,7 @@ if __name__ == "__main__":
                 #     nx.write_gpickle(G, nx_filename)
                 # _, ax = plt.subplots(figsize=(8, 8))
                 # plot_nx_with_edge_cmaps(G, weight_name='weight', threshold=0.01, ax=ax)
-                # plt.savefig(os.path.join(args.outdir, "event{}_display_all_{}.pdf".format(evtid, i)))
+                # plt.savefig(os.path.join(outdir, "event{}_display_all_{}.pdf".format(evtid, i)))
                 # plt.clf()
 
                 # # do truth
@@ -146,7 +140,7 @@ if __name__ == "__main__":
                 # G1.add_edges_from([edge for edge in G.edges(data=True) if edge[2]['solution'] == 1])
                 # _, ax = plt.subplots(figsize=(8, 8))
                 # plot_nx_with_edge_cmaps(G1, weight_name='weight', threshold=0.01, ax=ax, cmaps=plt.get_cmap("gray"))
-                # plt.savefig(os.path.join(args.outdir, "event{}_display_truth_{}.pdf".format(evtid, i)))
+                # plt.savefig(os.path.join(outdir, "event{}_display_truth_{}.pdf".format(evtid, i)))
                 # plt.clf()
 
                 # # do fake 
@@ -155,10 +149,10 @@ if __name__ == "__main__":
                 # G2.add_edges_from([edge for edge in G.edges(data=True) if edge[2]['solution'] == 0])
                 # _, ax = plt.subplots(figsize=(8, 8))
                 # plot_nx_with_edge_cmaps(G2, weight_name='weight', threshold=0.01, ax=ax, cmaps=plt.get_cmap("Greys"))
-                # plt.savefig(os.path.join(args.outdir, "event{}_display_fake_{}.pdf".format(evtid, i)))
+                # plt.savefig(os.path.join(outdir, "event{}_display_fake_{}.pdf".format(evtid, i)))
                 # plt.clf()
 
-    outplot = os.path.join(args.outdir, "roc.pdf")
+    outplot = os.path.join(outdir, "tot_roc.pdf")
     if os.path.exists(outplot) and not args.overwrite:
        exit(0)
 
@@ -170,4 +164,4 @@ if __name__ == "__main__":
         prediction, y_test,
         outname=outplot,
         off_interactive=True
-        )
+    )

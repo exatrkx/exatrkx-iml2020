@@ -24,8 +24,8 @@ setup(
         "torch",
         "pytorch-lightning==1.0.2",
         "faiss-gpu",
-        "graph_nets>=1.1",
         'trackml@ https://github.com/LAL/trackml-library/tarball/master#egg=trackml-3',
+        "graph_nets>=1.1",
         # "tensorflow",
         # 'horovod',
     ],
@@ -44,5 +44,6 @@ setup(
         'exatrkx/scripts/train_gnn_tf.py',
         'exatrkx/scripts/eval_gnn_tf.py',
         'exatrkx/scripts/tracks_from_gnn.py',
+        'exatrkx/scripts/install_geometric.sh',
     ],
 )
