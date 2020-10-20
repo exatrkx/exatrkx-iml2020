@@ -208,13 +208,15 @@ def get_one_event(event_path,
     hits, cells, particles, truth = trackml.dataset.load_event(event_path)
     pt = np.sqrt(particles.px**2 + particles.py**2 + particles.pz**2)
     particles = particles.assign(pt=pt)
+    particles.loc[particles.shape[0]] = np.array([0, 0, 0, 0, 10, 10, 10, 0, 1000])
 
     if remove_noise:
-        hits, cells, truth = remove_all_noise(hits, cells, truth)
+        hits, cells, truth = (hits, cells, truth)
 
     if remove_endcaps:
         hits, cells, truth = remove_all_endcaps(hits, cells, truth)
-    truth = truth.merge(particles[['particle_id', 'pt']], on='particle_id')
+
+    truth = truth.merge(particles[['particle_id', 'pt']], on='particle_id', how='left')
     truth = truth.sort_values(by='hit_id')
     truth = truth.set_index([truth['hit_id']-1])
     hits, truth, cells = apply_pt_cut(hits, truth, cells, pt_cut)

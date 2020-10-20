@@ -58,26 +58,34 @@ def select_hits(hits, truth, particles, pt_min=0, endcaps=False, noise=False):
     vlid_groups = hits.groupby(['volume_id', 'layer_id'])
     hits = pd.concat([vlid_groups.get_group(vlids[i]).assign(layer=i)
                       for i in range(n_det_layers)])
+    pt = np.sqrt(particles.px**2 + particles.py**2)
+    particles = particles.assign(pt=pt)
+
+    # merge hits with truth information
+    hits = hits.merge(truth, on='hit_id', how='left')
+    hits = hits.merge(particles, on='particle_id', how='left')
+
+    # noise hits does not have particle info
+    # yielding NaN value
+    hits = hits.fillna(value=0)
+
     if noise is False:
-        # Calculate particle transverse momentum
-        pt = np.sqrt(particles.px**2 + particles.py**2)
-        # Applies pt cut, removes noise hits
-        particles = particles[pt > pt_min]
-        truth = (truth[['hit_id', 'particle_id']]
-                 .merge(particles[['particle_id', 'vx', 'vy', 'vz']], on='particle_id'))
+        hits = hits[hits.particle_id > 0]
     else:
-        # Calculate particle transverse momentum
-        pt = np.sqrt(truth.tpx**2 + truth.tpy**2)
-        # Applies pt cut
-        truth = truth[pt > pt_min]
-        truth.loc[truth['particle_id'] == 0,'particle_id'] = float('NaN')
-    # Calculate derived hits variables
+        hits.loc[hits['particle_id']==0, 'particle_id'] = float("NaN")
+    
+    # apply pT cut
+    if pt_min > 0:
+        # remove hits associated with a particle whose pT > pt_min.
+        # noise hits are not affected
+        hits = hits[(hits.particle_id==0) | (hits.pt <= pt_min)]
+
+
     r = np.sqrt(hits.x**2 + hits.y**2)
     phi = np.arctan2(hits.y, hits.x)
-    # Select the data columns we need
-    hits = (hits[['hit_id', 'x', 'y', 'z', 'layer']]
-            .assign(r=r, phi=phi)
-            .merge(truth[['hit_id', 'particle_id', 'vx', 'vy', 'vz']], on='hit_id'))
+    hit_features = ['hit_id', 'x', 'y', 'z', 'layer', 'particle_id', 'vx', 'vy', 'vz']
+    hits = hits[hit_features].assign(r=r, phi=phi)
+
     # (DON'T) Remove duplicate hits
 #     hits = hits.loc[
 #         hits.groupby(['particle_id', 'layer'], as_index=False).r.idxmin()
@@ -121,9 +129,10 @@ def build_event(event_file, pt_min, feature_scale, adjacent=True,
         if adjacent: layerwise_true_edges = layerwise_true_edges[:, (layers[layerwise_true_edges[1]] - layers[layerwise_true_edges[0]] == 1)]
         print("Layerwise truth graph built for", event_file, "with size", layerwise_true_edges.shape)
 
-    return hits[['r', 'phi', 'z']].to_numpy() / feature_scale,
-           hits.particle_id.to_numpy(), layers, layerless_true_edges,
-           layerwise_true_edges, hits['hit_id'].to_numpy()
+    return (hits[['r', 'phi', 'z']].to_numpy() / feature_scale,
+            hits.particle_id.to_numpy(),
+            layers, layerless_true_edges, layerwise_true_edges,
+            hits['hit_id'].to_numpy())
 
 def prepare_event(
             event_file, detector_orig, detector_proc, cell_features, output_dir=None,
