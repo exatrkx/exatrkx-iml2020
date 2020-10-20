@@ -3,6 +3,7 @@ import sys
 import os
 import multiprocessing as mp
 from functools import partial
+import glob
 
 # 3rd party imports
 import numpy as np
@@ -33,7 +34,9 @@ class FeatureStore(LightningDataModule):
 
     def prepare_data(self):
         # Find the input files
-        all_files = os.listdir(self.input_dir)
+        # all_files = os.listdir(self.input_dir)
+        # print(self.input_dir)
+        all_files = [os.path.basename(x) for x in glob.glob(os.path.join(self.input_dir, "*.csv"))]
         all_events = sorted(np.unique([os.path.join(self.input_dir, event[:14]) for event in all_files]))[:self.n_files]
 
         # Split the input files by number of tasks and select my chunk only
