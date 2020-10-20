@@ -4,6 +4,6 @@
 
 ```bash
 conda create --name exatrkx python=3.8
+
+pip install --upgrade pip
 ```
-
-

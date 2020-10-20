@@ -44,6 +44,8 @@ if __name__ == "__main__":
     add_arg("--n-files", help='number of files to process', default=None, type=int)
     add_arg('--n-workers', help='number of workers/threads', default=None, type=int)
     add_arg("--pt-min", help='minimum pT', default=None, type=float)
+    add_arg("--filter-cut", help="threshold applied on filtering score", default=None, type=float)
+    add_arg("--no-gpu", help="no GPU", action='store_true')
 
     args = parser.parse_args()
     config_dict = {
@@ -51,6 +53,9 @@ if __name__ == "__main__":
         'embedding': 'train_embedding.yaml', 
         'filtering': 'train_filter.yaml',
     }
+    print("Action **{}** is chosen".format(args.action))
+    if args.no_gpu:
+        os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
     if args.config is None or not os.path.exists(args.config):
         print("missing configuration, using default")
@@ -70,7 +75,7 @@ if __name__ == "__main__":
 
     pp.pprint(config)
     ctn = input("Continue? [y/n]: ")
-    print(ctn)
+
     if ctn.lower() == "y":
         eval(args.action)(config, args)
     else:

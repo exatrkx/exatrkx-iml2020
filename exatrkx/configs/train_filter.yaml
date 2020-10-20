@@ -28,12 +28,5 @@ factor: 0.3
 patience: 5
 regime:
   # - non_ci # This is to NOT include cell information. Switch comment with "ci" to include cell information
-    - ci
-    - pid
-max_epochs: 100
-
-# Post-processing
-callbacks: [] #[FilterInferenceCallback]
-
-# Logging
-wandb_save_dir: /global/cscratch1/sd/danieltm/ExaTrkX/wandb_data
+  - ci
+  #- pid

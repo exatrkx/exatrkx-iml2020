@@ -1,7 +1,8 @@
 #!/usr/bin/env python
+import os
 
 import tensorflow as tf
-from tfgraphs.dataset_base import DoubletsDataset
+from exatrkx import DoubletsDataset
 
 if __name__ == "__main__":
     import argparse
@@ -12,4 +13,11 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     data = DoubletsDataset()
-    data.process(indir=args.inputdir, outdir=args.outname)
+    datatypes = ['train', 'val', 'test']
+    for datatype in datatypes:
+        print("processing files in folder: {}".format(datatype))
+        inputdir = os.path.join(args.inputdir, datatype)
+        outname = os.path.join(args.outname, datatype)
+        if not os.path.exists(outname):
+            os.makedirs(outname, exist_ok=True)
+        data.process(indir=inputdir, outdir=outname)

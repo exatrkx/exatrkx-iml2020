@@ -64,7 +64,7 @@ class FilterBase(LightningModule):
         scheduler = [
             {
                 'scheduler': torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer[0], factor=self.hparams["factor"], patience=self.hparams["patience"]),
-                'monitor': 'checkpoint_on',
+                'monitor': 'val_loss',
                 'interval': 'epoch',
                 'frequency': 1
             }
@@ -102,10 +102,9 @@ class FilterBase(LightningModule):
         else:
             loss = F.binary_cross_entropy_with_logits(output, batch.y[combined_indices], pos_weight = weight)
 
-        result = pl.TrainResult(minimize=loss)
-        result.log('train_loss', loss, prog_bar=True)
 
-        return result
+        self.log('train_loss', loss, prog_bar=True)
+        return loss
 
     def validation_step(self, batch, batch_idx):
 
@@ -118,8 +117,7 @@ class FilterBase(LightningModule):
 
         val_loss = F.binary_cross_entropy_with_logits(output, batch.y[subset_ind])
 
-        result = pl.EvalResult(checkpoint_on=val_loss)
-        result.log('val_loss', val_loss, prog_bar=True)
+        self.log('val_loss', val_loss, prog_bar=True)
 
         #Edge filter performance
         preds = F.sigmoid(output) > self.hparams["filter_cut"] #Maybe send to CPU??
@@ -133,8 +131,10 @@ class FilterBase(LightningModule):
             edge_true_positive = (batch.y[subset_ind].bool() & preds).sum().float()
 
 
-        result.log_dict({'eff': torch.tensor(edge_true_positive/edge_true), 'pur': torch.tensor(edge_true_positive/edge_positive)}, prog_bar=True)
-        return result
+        self.log_dict({
+            'val_eff': torch.tensor(edge_true_positive/edge_true),
+            'val_pur': torch.tensor(edge_true_positive/edge_positive)}, prog_bar=True)
+
 
     def optimizer_step(self, current_epoch, batch_nb, optimizer, optimizer_idx, second_order_closure=None, on_tpu=False, using_native_amp=False, using_lbfgs=False):
         # warm up lr

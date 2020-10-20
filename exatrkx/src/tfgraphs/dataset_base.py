@@ -7,8 +7,7 @@ import os
 import numpy as np
 import tensorflow as tf
 from graph_nets import utils_tf
-from root_gnn.src.datasets import graph
-from typing import Optional
+from exatrkx.src.tfgraphs import graph
 
 class DoubletsDataset(object):
     def __init__(self, with_padding=False, n_graphs_per_evt=1):
@@ -23,11 +22,11 @@ class DoubletsDataset(object):
         Convert the event into a graphs_tuple. 
         """
         n_nodes = event['x'].shape[0]
-        n_edges = event['edge_index'].shape[1]
+        n_edges = event['e_radius'].shape[1]
         nodes = event['x']
         edges = np.zeros((n_edges, 1), dtype=np.float32)
-        senders =  event['edge_index'][0, :]
-        receivers = event['edge_index'][1, :]
+        senders =  event['e_radius'][0, :]
+        receivers = event['e_radius'][1, :]
         edge_target = event['y']
         
         input_datadict = {
@@ -70,11 +69,12 @@ class DoubletsDataset(object):
         now = time.time()
         for filename in files:
             infile = os.path.join(indir, filename)
-            try:
+            if "npz" in infile:
                 array = np.load(infile)
-            except ValueError:
+            else:
                 import torch
                 array = torch.load(infile, map_location='cpu')
+            # print(array)
             tensors = self.make_graph(array)
             def generator():
                 for G in tensors:
