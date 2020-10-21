@@ -45,6 +45,7 @@ if __name__ == "__main__":
     add_arg("--pt-min", help='minimum pT', default=None, type=float)
     add_arg("--filter-cut", help="threshold applied on filtering score", default=None, type=float)
     add_arg("--no-gpu", help="no GPU", action='store_true')
+    add_arg("-y", "--yes", help='yes and go', action='store_true')
 
     args = parser.parse_args()
 
@@ -71,7 +72,7 @@ if __name__ == "__main__":
             config[key] = value
 
     pp.pprint(config)
-    ctn = input("Continue? [y/n]: ")
+    ctn = 'y' if args.y else input("Continue? [y/n]: ")
 
     if ctn.lower() == "y":
         with open(os.path.join(outdir_dict[args.action], config_file), 'w') as f:
