@@ -3,6 +3,7 @@ base class defines the procedure with that the TFrecord data is produced.
 """
 import time
 import os
+import multiprocessing as mp
 
 import numpy as np
 import tensorflow as tf
@@ -10,12 +11,13 @@ from graph_nets import utils_tf
 from exatrkx.src.tfgraphs import graph
 
 class DoubletsDataset(object):
-    def __init__(self, with_padding=False, n_graphs_per_evt=1):
+    def __init__(self, num_workers=1, with_padding=False, n_graphs_per_evt=1):
         self.input_dtype = None
         self.input_shape = None
         self.target_dtype = None
         self.target_shape = None
         self.with_padding = False
+        self.num_workers = num_workers
 
     def make_graph(self, event, debug=False):
         """
