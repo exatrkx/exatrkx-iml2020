@@ -11,7 +11,10 @@ from graph_nets import utils_tf
 from exatrkx.src.tfgraphs import graph
 
 class DoubletsDataset(object):
-    def __init__(self, num_workers=1, with_padding=False, n_graphs_per_evt=1, overwrite=False, edge_name='edge_index'):
+    def __init__(self, num_workers=1, with_padding=False,
+                n_graphs_per_evt=1, overwrite=False, edge_name='edge_index',
+                truth_name='y'
+        ):
         self.input_dtype = None
         self.input_shape = None
         self.target_dtype = None
@@ -20,6 +23,7 @@ class DoubletsDataset(object):
         self.num_workers = num_workers
         self.overwrite = overwrite
         self.edge_name = edge_name
+        self.truth_name = truth_name
 
     def make_graph(self, event, debug=False):
         """
@@ -32,7 +36,7 @@ class DoubletsDataset(object):
         edges = np.zeros((n_edges, 1), dtype=np.float32)
         senders =  event[edge_name][0, :]
         receivers = event[edge_name][1, :]
-        edge_target = event['y']
+        edge_target = event[self.truth_name]
         
         input_datadict = {
             "n_node": n_nodes,
