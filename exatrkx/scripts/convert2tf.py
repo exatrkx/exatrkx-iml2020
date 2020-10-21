@@ -14,12 +14,13 @@ if __name__ == "__main__":
     add_arg("--output-dir", help='output directory if not predefined one', default=None)
     add_arg("--no-category", help="no subfolders train,val,test", action='store_true')
     add_arg("--overwrite", help='overwrite the existing files', action='store_true')
+    add_arg("--edge-name", help='edge names', default="edge_index")
     args = parser.parse_args()
     
     inputdir = utils_dir.filtering_outdir if args.input_dir is None else args.input_dir
     outdir = utils_dir.gnn_inputs if args.output_dir is None else args.output_dir
 
-    data = DoubletsDataset(num_workers=args.num_workers, overwrite=args.overwrite)
+    data = DoubletsDataset(num_workers=args.num_workers, overwrite=args.overwrite, edge_name=args.edge_name)
     if args.no_category:
         data.process(indir=inputdir, outdir=outdir)
         exit(0)
