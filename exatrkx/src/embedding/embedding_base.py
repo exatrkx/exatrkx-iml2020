@@ -82,6 +82,8 @@ class EmbeddingBase(LightningModule):
 
     def training_step(self, batch, batch_idx):
 
+        # apply the embedding neural network on the hit features
+        # and return hidden features in the embedding space.
         if 'ci' in self.hparams["regime"]:
             spatial = self(torch.cat([batch.cell_data, batch.x], axis=-1))
         else:
@@ -93,6 +95,7 @@ class EmbeddingBase(LightningModule):
                                         batch.layerless_true_edges[0]], axis=1).T
                             ], axis=-1)
 
+        # construct doublets for training
         e_spatial = torch.empty([2,0], dtype=torch.int64, device=self.device)
 
         if 'rp' in self.hparams["regime"]:

@@ -26,6 +26,9 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Evaluate trained GNN model")
     add_arg = parser.add_argument
+    add_arg("--input-dir", help='input directory')
+    add_arg("--outdir", help='output directory')
+    add_arg("--model-dir", help='model directory')
     add_arg("--num-iters", help="number of message passing steps", default=8, type=int)
     add_arg('--inspect', help='inspect intermediate results', action='store_true')
     add_arg("--overwrite", help="overwrite the output", action='store_true')
@@ -38,9 +41,11 @@ if __name__ == "__main__":
         tf.config.experimental.set_memory_growth(gpu, True)
 
 
-    filenames = tf.io.gfile.glob(os.path.join(utils_dir.gnn_inputs, "test", "*"))
+    gnn_input = os.path.join(utils_dir.gnn_inputs, "test", "*") if args.input_dir is None else args.input_dir
+    filenames = tf.io.gfile.glob(gnn_input)
+
     nevts = args.max_evts
-    outdir = utils_dir.gnn_output
+    outdir = utils_dir.gnn_output if args.outdir is None else args.outdir
     print("Input file names:", filenames)
     print("In total", len(filenames), "files")
     print("Process", nevts, "events")
@@ -62,7 +67,7 @@ if __name__ == "__main__":
     optimizer = snt.optimizers.Adam(0.001)
     model = SegmentClassifier()
 
-    output_dir = utils_dir.gnn_models
+    output_dir = utils_dir.gnn_models if args.model_dir is None else args.model_dir
     checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
     ckpt_manager = tf.train.CheckpointManager(checkpoint, directory=output_dir, max_to_keep=5)
     if os.path.exists(os.path.join(output_dir, ckpt_name)):

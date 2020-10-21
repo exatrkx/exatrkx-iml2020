@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 import os
 import torch
+import math
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set_theme(style="ticks")
+import numpy as np
 
 from exatrkx import config_dict
 from exatrkx import outdir_dict
@@ -44,10 +50,6 @@ if __name__ == "__main__":
         if args.action != 'build':
             n_tot_truth += dd['layerless_true_edges'].shape[1]
 
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    sns.set_theme(style="ticks")
-    import numpy as np
     n_nodes = np.array(n_nodes)
     n_edges = np.array(n_edges)
     n_tot_edges = np.sum(n_edges)
@@ -56,7 +58,7 @@ if __name__ == "__main__":
     pp = sns.jointplot(x=n_nodes, y=n_edges, kind='hex', color='#4CB391')
     pp.set_axis_labels('number of nodes', 'number of edges')
     if args.action != "build":
-        import math
+
         def ratio_error(a, b, in_percentage=False):
             ratio = a/b
             if in_percentage:
