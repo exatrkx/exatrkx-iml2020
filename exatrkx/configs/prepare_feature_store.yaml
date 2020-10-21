@@ -3,8 +3,8 @@ cell_information: true
 endcaps: false
 layerless: true
 layerwise: false
-n_files: 10
+n_files: 100
 n_tasks: 1
-n_workers: 1
+n_workers: 12
 noise: false
 pt_min: 1
