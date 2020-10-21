@@ -13,3 +13,6 @@ from exatrkx.src.tfgraphs.model import SegmentClassifier
 from exatrkx.src.tfgraphs.utils import plot_metrics
 from exatrkx.src.tfgraphs.utils import np_to_nx
 from exatrkx.src.tfgraphs.utils import plot_nx_with_edge_cmaps
+
+from exatrkx.src.utils_dir import config_dict
+from exatrkx.src.utils_dir import outdir_dict

@@ -5,7 +5,8 @@ import yaml
 import pprint
 
 from pytorch_lightning import Trainer
-from exatrkx.src import utils_dir
+from exatrkx import config_dict
+from exatrkx import outdir_dict
 
 def build(config, args):
     from exatrkx import FeatureStore
@@ -46,16 +47,6 @@ if __name__ == "__main__":
     add_arg("--no-gpu", help="no GPU", action='store_true')
 
     args = parser.parse_args()
-    config_dict = {
-        "build": 'prepare_feature_store.yaml',
-        'embedding': 'train_embedding.yaml', 
-        'filtering': 'train_filter.yaml',
-    }
-    outdir_dict = {
-        "build": utils_dir.feature_outdir,
-        'embedding': utils_dir.embedding_outdir,
-        'filtering': utils_dir.filtering_outdir,
-    }
 
     print("Action **{}** is chosen".format(args.action))
     if args.no_gpu:

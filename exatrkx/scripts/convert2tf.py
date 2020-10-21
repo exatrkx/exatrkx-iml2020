@@ -12,8 +12,8 @@ if __name__ == "__main__":
     datatypes = ['train', 'val', 'test']
     for datatype in datatypes:
         print("processing files in folder: {}".format(datatype))
-        inputdir = os.path.join(inputdir, datatype)
+        indir = os.path.join(inputdir, datatype)
         outname = os.path.join(outdir, datatype)
         if not os.path.exists(outname):
             os.makedirs(outname, exist_ok=True)
-        data.process(indir=inputdir, outdir=outname)
+        data.process(indir=indir, outdir=outname)
