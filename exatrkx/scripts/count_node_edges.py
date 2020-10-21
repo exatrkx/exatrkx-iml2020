@@ -10,17 +10,24 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Count number of nodes and edges at different stages, using training folder")
     add_arg = parser.add_argument
     add_arg("outname", help='output name')
-    add_arg("--action", help="which stage", choices=['build', 'embedding', 'filtering'], required=True)
+    add_arg("--input-dir", help='input directory if not predefined one', default=None)
+    add_arg("--action", help="which stage", choices=['build', 'embedding', 'filtering', 'custom'], default='custom')
     add_arg("--datatype", default='train', choices=['train', 'val', 'test'], help='which dataset')
+    add_arg("--edge-name", default='e_radius',
+                    choices=['e_radius', 'edge_index', 'layerless_true_edges'], help='name of edge matrix in input')
     args = parser.parse_args()
 
-    if args.action == 'build':
-        datatype = "all"
-        input_dir = outdir_dict[args.action]
+    if args.input_dir is None:
+        if args.action == 'build':
+            datatype = "all"
+            input_dir = outdir_dict[args.action]
+        else:
+            input_dir = os.path.join(outdir_dict[args.action], args.datatype)
+            datatype = args.datatype
     else:
-        input_dir = os.path.join(outdir_dict[args.action], args.datatype)
-        datatype = args.datatype
+        input_dir = args.input_dir
 
+    edge_name = args.edge_name
     all_files = os.listdir(input_dir)
     print("Total {} files".format(len(all_files)))
 
@@ -28,16 +35,12 @@ if __name__ == "__main__":
     n_edges = []
     n_tot_truth = 0
     n_tot_edges = 0
-    keyname = {
-        "build": "layerless_true_edges", 
-        'embedding': "e_radius",
-        'filtering': "e_radius",
-    }
+
     for filename in all_files:
         filename = os.path.join(input_dir, filename)
         dd = torch.load(filename, map_location='cpu')
         n_nodes.append(dd.x.shape[0])
-        n_edges.append(dd[keyname[args.action]].shape[1])
+        n_edges.append(dd[edge_name].shape[1])
         if args.action != 'build':
             n_tot_truth += dd['layerless_true_edges'].shape[1]
 
