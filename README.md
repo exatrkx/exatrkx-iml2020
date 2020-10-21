@@ -17,7 +17,7 @@ Dependencies not listed in the `setup.py` are tabulated below. We are referring 
 * [horovod](https://github.com/horovod/horovod#install) for distributed training
 
 ## Pipelines
-The program saves intermediate files after each processing step and we organize those outputs with a predefined structure. The users needs to assign two environment variables: `TRKXINPUTDIR` for tracking input data pointing to the csv files for each event and the `detector.csv` file should be at its uplevel folder; `TRKXOUTPUTDIR` for saving output files.
+The program saves intermediate files after each processing step and we organize those outputs with a predefined structure. **Users have to assign two environment variables**: `TRKXINPUTDIR` for tracking input data pointing to the csv files for each event and the `detector.csv` file should be at its uplevel folder; `TRKXOUTPUTDIR` for saving output files. It can be done either via `export TRKXINPUTDIR=my_input_dir` and `export TRKXOUTPUTDIR=my-output-dir`
 
 ### Preprocessing
 It reads input files, constructs cell features and more importantly figures out truth connections (edges) between hits from the same track.
