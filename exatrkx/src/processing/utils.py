@@ -78,7 +78,7 @@ def select_hits(hits, truth, particles, pt_min=0, endcaps=False, noise=False):
     if pt_min > 0:
         # remove hits associated with a particle whose pT > pt_min.
         # noise hits are not affected
-        hits = hits[(hits.particle_id==0) | (hits.pt <= pt_min)]
+        hits = hits[(hits.particle_id==0) | (hits.pt > pt_min)]
 
 
     r = np.sqrt(hits.x**2 + hits.y**2)
