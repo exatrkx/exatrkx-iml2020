@@ -135,8 +135,8 @@ class FilterBase(LightningModule):
 
 
         self.log_dict({
-            'val_eff': torch.tensor(edge_true_positive/edge_true),
-            'val_pur': torch.tensor(edge_true_positive/edge_positive)}, prog_bar=True)
+            'val_eff': edge_true_positive/edge_true,
+            'val_pur': edge_true_positive/edge_positive}, prog_bar=True)
 
 
     def optimizer_step(self, current_epoch, batch_nb, optimizer, optimizer_idx, second_order_closure=None, on_tpu=False, using_native_amp=False, using_lbfgs=False):

@@ -31,3 +31,16 @@ outdirs = [feature_outdir, embedding_outdir, filtering_outdir,
 
 if not os.path.exists(feature_outdir):
     [os.makedirs(x, exist_ok=True) for x in outdirs]
+
+
+config_dict = {
+    "build": 'prepare_feature_store.yaml',
+    'embedding': 'train_embedding.yaml', 
+    'filtering': 'train_filter.yaml',
+}
+
+outdir_dict = {
+    "build": feature_outdir,
+    'embedding': embedding_outdir,
+    'filtering': filtering_outdir,
+}
