@@ -13,12 +13,13 @@ if __name__ == "__main__":
     add_arg("--input-dir", help='input directory if not predefined one', default=None)
     add_arg("--output-dir", help='output directory if not predefined one', default=None)
     add_arg("--no-category", help="no subfolders train,val,test", action='store_true')
+    add_arg("--overwrite", help='overwrite the existing files', action='store_true')
     args = parser.parse_args()
     
     inputdir = utils_dir.filtering_outdir if args.input_dir is None else args.input_dir
     outdir = utils_dir.gnn_inputs if args.output_dir is None else args.output_dir
 
-    data = DoubletsDataset(num_workers=args.num_workers)
+    data = DoubletsDataset(num_workers=args.num_workers, overwrite=args.overwrite)
     if args.no_category:
         data.process(indir=inputdir, outdir=outdir)
         exit(0)

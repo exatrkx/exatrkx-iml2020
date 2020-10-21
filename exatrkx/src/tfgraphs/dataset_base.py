@@ -11,13 +11,14 @@ from graph_nets import utils_tf
 from exatrkx.src.tfgraphs import graph
 
 class DoubletsDataset(object):
-    def __init__(self, num_workers=1, with_padding=False, n_graphs_per_evt=1):
+    def __init__(self, num_workers=1, with_padding=False, n_graphs_per_evt=1, overwrite=False):
         self.input_dtype = None
         self.input_shape = None
         self.target_dtype = None
         self.target_shape = None
         self.with_padding = False
         self.num_workers = num_workers
+        self.overwrite = overwrite
 
     def make_graph(self, event, debug=False):
         """
@@ -71,6 +72,9 @@ class DoubletsDataset(object):
         now = time.time()
         for filename in files:
             infile = os.path.join(indir, filename)
+            outname = os.path.join(outdir, filename)
+            if os.path.exists(outname) and not self.overwrite:
+                continue
             if "npz" in infile:
                 array = np.load(infile)
             else:
@@ -88,7 +92,7 @@ class DoubletsDataset(object):
                 output_shapes=(self.input_shape, self.target_shape),
                 args=None
             )
-            outname = os.path.join(outdir, filename)
+
             writer = tf.io.TFRecordWriter(outname)
             for data in dataset:
                 example = graph.serialize_graph(*data)
