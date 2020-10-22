@@ -36,7 +36,7 @@ class DoubletsDataset(object):
         edges = np.zeros((n_edges, 1), dtype=np.float32)
         senders =  event[edge_name][0, :]
         receivers = event[edge_name][1, :]
-        edge_target = event[self.truth_name].astype(np.float32)
+        edge_target = event[self.truth_name].numpy().astype(np.float32)
         
         input_datadict = {
             "n_node": n_nodes,
