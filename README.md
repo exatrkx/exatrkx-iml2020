@@ -8,6 +8,8 @@ Building input graphs for Graph Neural Network (GNN) is based on the embedding l
 conda create --name exatrkx python=3.8
 
 pip install --upgrade pip
+
+pip install -e .
 ```
 Dependencies not listed in the `setup.py` are tabulated below. We are referring to their webpage for detailed installation instructions.
 

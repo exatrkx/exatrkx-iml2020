@@ -72,11 +72,9 @@ def plot_metrics(odd, tdd, odd_th=0.5, tdd_th=0.5, outname='roc_graph_nets.eps',
     print("AUC: %.4f" % auc)
 
 
-    # fig, axs = plt.subplots(2, 2, figsize=(12, 10), constrained_layout=True)
-    # axs = axs.flatten()
-    # ax0, ax1, ax2, ax3 = axs
-    fig, axs = plt.subplots(1, 1, figsize=(6, 5))
-    ax0 = axs
+    fig, axs = plt.subplots(2, 2, figsize=(12, 10), constrained_layout=True)
+    axs = axs.flatten()
+    ax0, ax1, ax2, ax3 = axs
 
     # Plot the model outputs
     # binning=dict(bins=50, range=(0,1), histtype='step', log=True)
@@ -89,25 +87,25 @@ def plot_metrics(odd, tdd, odd_th=0.5, tdd_th=0.5, outname='roc_graph_nets.eps',
     ax0.set_title('ROC curve, AUC = %.4f' % auc, fontsize=fontsize)
 
     # Plot the ROC curve
-    # ax1.plot(fpr, tpr, lw=2)
-    # ax1.plot([0, 1], [0, 1], '--', lw=2)
-    # ax1.set_xlabel('False positive rate', fontsize=fontsize)
-    # ax1.set_ylabel('True positive rate', fontsize=fontsize)
-    # ax1.set_title('ROC curve, AUC = %.4f' % auc, fontsize=fontsize)
-    # ax1.tick_params(width=2, grid_alpha=0.5, labelsize=minor_size)
+    ax1.plot(fpr, tpr, lw=2)
+    ax1.plot([0, 1], [0, 1], '--', lw=2)
+    ax1.set_xlabel('False positive rate', fontsize=fontsize)
+    ax1.set_ylabel('True positive rate', fontsize=fontsize)
+    ax1.set_title('ROC curve, AUC = %.4f' % auc, fontsize=fontsize)
+    ax1.tick_params(width=2, grid_alpha=0.5, labelsize=minor_size)
 
 
-    # p, r, t = sklearn.metrics.precision_recall_curve(y_true, odd)
-    # ax2.plot(t, p[:-1], label='purity', lw=2)
-    # ax2.plot(t, r[:-1], label='efficiency', lw=2)
-    # ax2.set_xlabel('Cut on model score', fontsize=fontsize)
-    # ax2.tick_params(width=2, grid_alpha=0.5, labelsize=minor_size)
-    # ax2.legend(fontsize=fontsize, loc='upper right')
+    p, r, t = sklearn.metrics.precision_recall_curve(y_true, odd)
+    ax2.plot(t, p[:-1], label='purity', lw=2)
+    ax2.plot(t, r[:-1], label='efficiency', lw=2)
+    ax2.set_xlabel('Cut on model score', fontsize=fontsize)
+    ax2.tick_params(width=2, grid_alpha=0.5, labelsize=minor_size)
+    ax2.legend(fontsize=fontsize, loc='upper right')
 
-    # ax3.plot(p, r, lw=2)
-    # ax3.set_xlabel('Purity', fontsize=fontsize)
-    # ax3.set_ylabel('Efficiency', fontsize=fontsize)
-    # ax3.tick_params(width=2, grid_alpha=0.5, labelsize=minor_size)
+    ax3.plot(p, r, lw=2)
+    ax3.set_xlabel('Purity', fontsize=fontsize)
+    ax3.set_ylabel('Efficiency', fontsize=fontsize)
+    ax3.tick_params(width=2, grid_alpha=0.5, labelsize=minor_size)
 
     plt.savefig(outname)
     if off_interactive:

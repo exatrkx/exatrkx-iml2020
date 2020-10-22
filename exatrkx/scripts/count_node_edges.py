@@ -16,26 +16,31 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Count number of nodes and edges at different stages, using training folder")
     add_arg = parser.add_argument
     add_arg("outname", help='output name')
-    add_arg("--input-dir", help='input directory if not predefined one', default=None)
-    add_arg("--action", help="which stage", choices=['build', 'embedding', 'filtering', 'custom'], default='custom')
+    add_arg("--input-dir", help='input directory if not predefined one')
+    add_arg("--action", help="which stage",
+            choices=['build', 'embedding', 'filtering', 'custom'], default='custom')
     add_arg("--datatype", default='train', choices=['train', 'val', 'test'], help='which dataset')
     add_arg("--edge-name", default='e_radius',
-                    choices=['e_radius', 'edge_index', 'layerless_true_edges'], help='name of edge matrix in input')
+                    choices=['e_radius', 'edge_index', 'layerless_true_edges'],
+                    help='name of edge matrix in input')
+    add_arg("--max-evts", help='maximum number of events', default=-1, type=int)
     args = parser.parse_args()
 
+    datatype = args.datatype
     if args.input_dir is None:
         if args.action == 'build':
-            datatype = "all"
             input_dir = outdir_dict[args.action]
+            datatype = 'all'
         else:
             input_dir = os.path.join(outdir_dict[args.action], args.datatype)
-            datatype = args.datatype
     else:
         input_dir = args.input_dir
 
     edge_name = args.edge_name
     all_files = os.listdir(input_dir)
-    print("Total {} files".format(len(all_files)))
+    print("Total {} files and {} used".format(len(all_files), args.max_evts))
+    if args.max_evts > 0 and args.max_evts < len(all_files):
+        all_files = all_files[:args.max_evts]
 
     n_nodes = []
     n_edges = []

@@ -29,6 +29,7 @@ if __name__ == "__main__":
     add_arg("--input-dir", help='input directory')
     add_arg("--outdir", help='output directory')
     add_arg("--model-dir", help='model directory')
+    add_arg("--filter-dir", help='filtering file directory')
     add_arg("--num-iters", help="number of message passing steps", default=8, type=int)
     add_arg('--inspect', help='inspect intermediate results', action='store_true')
     add_arg("--overwrite", help="overwrite the output", action='store_true')
@@ -41,8 +42,8 @@ if __name__ == "__main__":
         tf.config.experimental.set_memory_growth(gpu, True)
 
 
-    gnn_input = os.path.join(utils_dir.gnn_inputs, "test", "*") if args.input_dir is None else args.input_dir
-    filenames = tf.io.gfile.glob(gnn_input)
+    gnn_input = os.path.join(utils_dir.gnn_inputs, "test") if args.input_dir is None else args.input_dir
+    filenames = tf.io.gfile.glob(os.path.join(gnn_input, "*"))
 
     nevts = args.max_evts
     outdir = utils_dir.gnn_output if args.outdir is None else args.outdir
@@ -77,13 +78,13 @@ if __name__ == "__main__":
     else:
         raise ValueError("cannot find model at:", output_dir)
 
-    evtids = [os.path.basename(args.input_data)]
 
+    filter_dir = os.path.join(utils_dir.filtering_outdir, 'test') if args.filter_dir is None else args.filter_dir
     outputs_te_list = []
     targets_te_list = []
     ievt = 0
     for inputs in dataset.take(nevts).as_numpy_iterator():
-        evtid = int(filenames[ievt])
+        evtid = int(os.path.basename(filenames[ievt]))
         print("processing event {}".format(evtid))
 
 
@@ -96,7 +97,7 @@ if __name__ == "__main__":
         outputs_te_list.append(output_graph)
         targets_te_list.append(target_graph)
 
-        filter_file = os.path.join(utils_dir.filtering_outdir, 'test', "{}".format(evtid))
+        filter_file = os.path.join(filter_dir, "{}".format(evtid))
         array = torch.load(filter_file, map_location='cpu')
         hits_id_nsecs = array['hid'].numpy()
         hits_pid_nsecs = array['pid'].numpy()
@@ -163,8 +164,12 @@ if __name__ == "__main__":
 
     outputs_te = utils_tf.concat(outputs_te_list, axis=0)
     targets_te = utils_tf.concat(targets_te_list, axis=0)
-    prediction = tf.reshape(outputs_te.edges, (-1,))
-    y_test = tf.reshape(targets_te.edges, (-1, ))
+    prediction = tf.squeeze(outputs_te.edges)
+    y_test = tf.squeeze(targets_te.edges)
+    print(prediction.shape)
+    print(y_test.shape)
+    # prediction = tf.reshape(outputs_te.edges, (-1,))
+    # y_test = tf.reshape(targets_te.edges, (-1, ))
     plot_metrics(
         prediction, y_test,
         outname=outplot,
