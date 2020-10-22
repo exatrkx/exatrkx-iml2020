@@ -112,12 +112,13 @@ if __name__ == "__main__":
             "x": inputs_te.nodes, 
         }
 
-        output = os.path.join(outdir, "{}".format(evtid))
+        output = os.path.join(outdir, "{}.npz".format(evtid))
         if not os.path.exists(output) or args.overwrite:
             np.savez(output, **array)
 
         print("{:,} nodes".format(array['x'].shape[0]))
         print("{:,} edges".format(array['senders'].shape[0]))
+        ievt += 1
 
         if args.inspect:
             y_test = array['truth']
@@ -158,20 +159,20 @@ if __name__ == "__main__":
                 # plt.savefig(os.path.join(outdir, "event{}_display_fake_{}.pdf".format(evtid, i)))
                 # plt.clf()
 
-    outplot = os.path.join(outdir, "tot_roc.pdf")
-    if os.path.exists(outplot) and not args.overwrite:
-       exit(0)
+    # outplot = os.path.join(outdir, "tot_roc.pdf")
+    # if os.path.exists(outplot) and not args.overwrite:
+    #    exit(0)
 
-    outputs_te = utils_tf.concat(outputs_te_list, axis=0)
-    targets_te = utils_tf.concat(targets_te_list, axis=0)
-    prediction = tf.squeeze(outputs_te.edges)
-    y_test = tf.squeeze(targets_te.edges)
-    print(prediction.shape)
-    print(y_test.shape)
-    # prediction = tf.reshape(outputs_te.edges, (-1,))
-    # y_test = tf.reshape(targets_te.edges, (-1, ))
-    plot_metrics(
-        prediction, y_test,
-        outname=outplot,
-        off_interactive=True
-    )
+    # outputs_te = utils_tf.concat(outputs_te_list, axis=0)
+    # targets_te = utils_tf.concat(targets_te_list, axis=0)
+    # prediction = tf.squeeze(outputs_te.edges)
+    # y_test = tf.squeeze(targets_te.edges)
+    # print(prediction.shape)
+    # print(y_test.shape)
+    # # prediction = tf.reshape(outputs_te.edges, (-1,))
+    # # y_test = tf.reshape(targets_te.edges, (-1, ))
+    # plot_metrics(
+    #     prediction, y_test,
+    #     outname=outplot,
+    #     off_interactive=True
+    # )

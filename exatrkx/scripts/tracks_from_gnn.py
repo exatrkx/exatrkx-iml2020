@@ -41,22 +41,24 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="construct tracks from the input created by the evaluate_edge_classifier")
     add_arg = parser.add_argument
-    add_arg("--max-evts", help='maximum number of events for testing', type=int)
+    add_arg("--max-evts", help='maximum number of events for testing', type=int, default=1)
+    add_arg("--input-dir", help='input directory')
     args = parser.parse_args()
 
-    inputdir = os.path.join(utils_dir.gnn_output, "test")
+    inputdir = os.path.join(utils_dir.gnn_output, "test") if args.input_dir is None else args.input_dir
+    # print("input directory:", inputdir)
     tot_files = os.listdir(inputdir)
     print("total {} testing files".format(len(tot_files)))
     nevts = args.max_evts
-    if tot_files < nevts:
-        nevts = tot_files
+    if len(tot_files) < nevts:
+        nevts = len(tot_files)
 
     for evtid in tot_files:
         print("Processing event: {}".format(evtid))
         filedir = os.path.join(inputdir, evtid)
-        evtid = int(evtid)
+        evtid = int(evtid[:-4])
 
-        array = np.load(os.path.join(utils_dir.gnn_output, 'test', str(evtid)))
+        array = np.load(filedir)
         prefix = os.path.join(os.path.expandvars(utils_dir.inputdir),
                             'event{:09d}'.format(evtid))
         hits, particles, truth = trackml.dataset.load_event(prefix, parts=['hits', 'particles', 'truth'])
