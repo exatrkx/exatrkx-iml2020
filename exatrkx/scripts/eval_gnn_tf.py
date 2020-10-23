@@ -47,6 +47,7 @@ if __name__ == "__main__":
 
     nevts = args.max_evts
     outdir = utils_dir.gnn_output if args.outdir is None else args.outdir
+    os.makedirs(outdir, exist_ok=True)
     print("Input file names:", filenames)
     print("In total", len(filenames), "files")
     print("Process", nevts, "events")
@@ -94,9 +95,6 @@ if __name__ == "__main__":
         output_graph = outputs_te[-1]
         target_graph = targets_te
 
-        outputs_te_list.append(output_graph)
-        targets_te_list.append(target_graph)
-
         filter_file = os.path.join(filter_dir, "{}".format(evtid))
         array = torch.load(filter_file, map_location='cpu')
         hits_id_nsecs = array['hid'].numpy()
@@ -111,6 +109,10 @@ if __name__ == "__main__":
             "pid": hits_pid_nsecs,
             "x": inputs_te.nodes, 
         }
+
+        outputs_te_list.append(array['score'])
+        targets_te_list.append(array['truth'])
+
 
         output = os.path.join(outdir, "{}.npz".format(evtid))
         if not os.path.exists(output) or args.overwrite:
@@ -159,20 +161,14 @@ if __name__ == "__main__":
                 # plt.savefig(os.path.join(outdir, "event{}_display_fake_{}.pdf".format(evtid, i)))
                 # plt.clf()
 
-    # outplot = os.path.join(outdir, "tot_roc.pdf")
-    # if os.path.exists(outplot) and not args.overwrite:
-    #    exit(0)
+    outplot = os.path.join(outdir, "tot_roc.pdf")
+    if os.path.exists(outplot) and not args.overwrite:
+       exit(0)
 
-    # outputs_te = utils_tf.concat(outputs_te_list, axis=0)
-    # targets_te = utils_tf.concat(targets_te_list, axis=0)
-    # prediction = tf.squeeze(outputs_te.edges)
-    # y_test = tf.squeeze(targets_te.edges)
-    # print(prediction.shape)
-    # print(y_test.shape)
-    # # prediction = tf.reshape(outputs_te.edges, (-1,))
-    # # y_test = tf.reshape(targets_te.edges, (-1, ))
-    # plot_metrics(
-    #     prediction, y_test,
-    #     outname=outplot,
-    #     off_interactive=True
-    # )
+    prediction = np.concatenate(outputs_te_list)
+    y_test = np.concatenate(targets_te_list)
+    plot_metrics(
+        prediction, y_test,
+        outname=outplot,
+        off_interactive=True
+    )

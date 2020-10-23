@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import time
 import os
+import glob
 
 import numpy as np
 import networkx as nx
@@ -43,16 +44,18 @@ if __name__ == "__main__":
     add_arg = parser.add_argument
     add_arg("--max-evts", help='maximum number of events for testing', type=int, default=1)
     add_arg("--input-dir", help='input directory')
+    add_arg("--outname", help='output file directory', default="scores.txt")
     args = parser.parse_args()
 
     inputdir = os.path.join(utils_dir.gnn_output, "test") if args.input_dir is None else args.input_dir
     # print("input directory:", inputdir)
-    tot_files = os.listdir(inputdir)
+    tot_files = [os.path.basename(x) for x in glob.glob(os.path.join(inputdir, "*.npz"))]
     print("total {} testing files".format(len(tot_files)))
     nevts = args.max_evts
     if len(tot_files) < nevts:
         nevts = len(tot_files)
 
+    all_scores = []
     for evtid in tot_files:
         print("Processing event: {}".format(evtid))
         filedir = os.path.join(inputdir, evtid)
@@ -84,5 +87,11 @@ if __name__ == "__main__":
         aa = hits.groupby("particle_id")['hit_id'].count()
         pids = aa[aa > 5].index
         good_hits = hits[hits.particle_id.isin(pids)]
+        score = score_event(good_hits, predicted_tracks)
+        print("Event {} has track ML score: {:.4f}".format(evtid, score))
+        all_scores.append((evtid, score))
 
-        print("Event {} has track ML score: {:.4f}".format(evtid, score_event(good_hits, predicted_tracks)))
+    with open(args.outname, 'a') as f:
+        out_str  = "Run Info: " + time.strftime('%d %b %Y %H:%M:%S', time.localtime())+"\n"
+        f.write(out_str)
+        f.write("\b".join(["{} {:.4f}".format(x, y) for x, y in all_scores]))

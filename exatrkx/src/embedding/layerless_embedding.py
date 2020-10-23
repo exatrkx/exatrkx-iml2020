@@ -104,7 +104,7 @@ class EmbeddingInferenceCallback(Callback):
         # and instead compute an r_build based on the EXACT r required to reach target eff/pur
         # e_spatial = self.clustering(spatial, pl_module.hparams.r_val, pl_module.hparams.knn_val)
         # e_spatial = radius_graph(spatial, r=pl_module.hparams.r_val, max_num_neighbors=100) 
-        e_spatial = build_edges(spatial, self.hparams["r_val"], 1000, res)
+        e_spatial = build_edges(spatial, self.hparams["r_val"], 100, res)
         e_spatial, y_cluster = graph_intersection(e_spatial, e_bidir)
 
         # batch.e_radius = e_spatial

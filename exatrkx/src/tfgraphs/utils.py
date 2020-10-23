@@ -56,7 +56,7 @@ def plot_metrics(odd, tdd, odd_th=0.5, tdd_th=0.5, outname='roc_graph_nets.eps',
             recall    = sklearn.metrics.recall_score(y_t, y_p)
             results.append((accuracy, precision, recall))
         
-        print("{:25.2f} {:7.2f} {:7.2f}".format(*thresholds))
+        print("GNN threshold:{:11.2f} {:7.2f} {:7.2f}".format(*thresholds))
         for idx,lab in enumerate(labels):
             print("{} {:6.4f} {:6.4f} {:6.4f}".format(lab, *[x[idx] for x in results]))
 
