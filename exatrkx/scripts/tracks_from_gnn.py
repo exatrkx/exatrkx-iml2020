@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
         # compare with the truth tracks that are associated with at least 5 hits
         aa = hits.groupby("particle_id")['hit_id'].count()
-        pids = aa[aa > 0].index
+        pids = aa[aa > 5].index
         good_hits = hits[hits.particle_id.isin(pids)]
 
         print("Event {} has track ML score: {:.4f}".format(evtid, score_event(good_hits, predicted_tracks)))
