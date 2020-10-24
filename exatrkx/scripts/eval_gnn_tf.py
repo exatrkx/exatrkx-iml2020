@@ -152,7 +152,7 @@ if __name__ == "__main__":
                 # plt.savefig(os.path.join(outdir, "event{}_display_truth_{}.pdf".format(evtid, i)))
                 # plt.clf()
 
-                # # do fake 
+                # # do fake
                 # G2 = nx.Graph()
                 # G2.add_nodes_from(G.nodes(data=True))
                 # G2.add_edges_from([edge for edge in G.edges(data=True) if edge[2]['solution'] == 0])

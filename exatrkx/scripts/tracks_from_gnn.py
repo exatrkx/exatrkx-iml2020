@@ -8,6 +8,7 @@ import networkx as nx
 import scipy as sp
 from sklearn.cluster import DBSCAN
 import pandas as pd
+import matplotlib.pyplot as plt
 
 import trackml.dataset
 from trackml.score import score_event
@@ -94,4 +95,8 @@ if __name__ == "__main__":
     with open(args.outname, 'a') as f:
         out_str  = "Run Info: " + time.strftime('%d %b %Y %H:%M:%S', time.localtime())+"\n"
         f.write(out_str)
-        f.write("\b".join(["{} {:.4f}".format(x, y) for x, y in all_scores]))
+        f.write("\n".join(["{} {:.4f}".format(x, y) for x, y in all_scores]))
+
+    _, ax = plt.subplots(1, 1, figsize=(6,5))
+    plt.hist(np.array(all_scores), lw=2, histtype='step', bins=50, range=(0.5, 1))
+    plt.savefig("score_summary.pdf")
