@@ -96,6 +96,7 @@ if __name__ == "__main__":
         out_str  = "Run Info: " + time.strftime('%d %b %Y %H:%M:%S', time.localtime())+"\n"
         f.write(out_str)
         f.write("\n".join(["{} {:.4f}".format(x, y) for x, y in all_scores]))
+        f.write("\n")
 
     _, ax = plt.subplots(1, 1, figsize=(6,5))
     plt.hist(np.array(all_scores), lw=2, histtype='step', bins=50, range=(0.5, 1))
