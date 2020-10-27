@@ -25,13 +25,15 @@ filtering_outdir = os.path.join(output_base, "filtering_output")
 gnn_inputs       = os.path.join(output_base, "gnn_inputs")
 gnn_models       = os.path.join(output_base, "gnn_models")
 gnn_output       = os.path.join(output_base, "gnn_output")
+trkx_output      = os.path.join(output_base, "trkx_output")
 
 outdirs = [feature_outdir, embedding_outdir, filtering_outdir,
-        gnn_inputs, gnn_models, gnn_output]
+        gnn_inputs, gnn_models, gnn_output, trkx_output]
 
 if not os.path.exists(feature_outdir):
     [os.makedirs(x, exist_ok=True) for x in outdirs]
 
+datatypes = ['train', 'val', 'test']
 
 config_dict = {
     "build": 'prepare_feature_store.yaml',

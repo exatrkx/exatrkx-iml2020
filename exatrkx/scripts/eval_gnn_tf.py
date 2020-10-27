@@ -27,13 +27,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate trained GNN model")
     add_arg = parser.add_argument
     add_arg("--input-dir", help='input directory')
-    add_arg("--outdir", help='output directory')
+    add_arg("--output-dir", help='output directory')
     add_arg("--model-dir", help='model directory')
     add_arg("--filter-dir", help='filtering file directory')
     add_arg("--num-iters", help="number of message passing steps", default=8, type=int)
     add_arg('--inspect', help='inspect intermediate results', action='store_true')
     add_arg("--overwrite", help="overwrite the output", action='store_true')
     add_arg("--max-evts", help='process maximum number of events', type=int, default=1)
+    add_arg("--datatype", help="", default="test", choices=utils_dir.datatypes)
 
     args = parser.parse_args()
 
@@ -42,11 +43,11 @@ if __name__ == "__main__":
         tf.config.experimental.set_memory_growth(gpu, True)
 
 
-    gnn_input = os.path.join(utils_dir.gnn_inputs, "test") if args.input_dir is None else args.input_dir
+    gnn_input = os.path.join(utils_dir.gnn_inputs, args.datatype) if args.input_dir is None else args.input_dir
     filenames = tf.io.gfile.glob(os.path.join(gnn_input, "*"))
 
     nevts = args.max_evts
-    outdir = utils_dir.gnn_output if args.outdir is None else args.outdir
+    outdir = os.path.join(utils_dir.gnn_output, args.datatype) if args.output_dir is None else args.output_dir
     os.makedirs(outdir, exist_ok=True)
     print("Input file names:", filenames)
     print("In total", len(filenames), "files")
