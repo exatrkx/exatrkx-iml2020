@@ -43,61 +43,86 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="construct tracks from the input created by the evaluate_edge_classifier")
     add_arg = parser.add_argument
+    # bookkeeping
     add_arg("--max-evts", help='maximum number of events for testing', type=int, default=1)
     add_arg("--input-dir", help='input directory')
-    add_arg("--outname", help='output file directory', default="scores.txt")
+    add_arg("--output-dir", help='output file directory for track candidates')
+    add_arg("--datatype", help="", default="test", choices=utils_dir.datatypes)
+
+    # hyperparameters for DB scan
+    add_arg("--edge-score-cut", help='edge score cuts', default=0, type=float)
+    add_arg("--epsilon", help="epsilon in DBScan", defaul=0.25, type=float)
+    add_arg("--min-samples", help='minimum number of samples in DBScan', default=2, type=int)
+
+    # for tracking ML score
+    add_arg("--min-num-hits", help='require minimum number of hits for each track', default=0, type=int)
+
     args = parser.parse_args()
 
-    inputdir = os.path.join(utils_dir.gnn_output, "test") if args.input_dir is None else args.input_dir
-    # print("input directory:", inputdir)
+    inputdir = os.path.join(utils_dir.gnn_output, args.datatype) if args.input_dir is None else args.input_dir
     tot_files = [os.path.basename(x) for x in glob.glob(os.path.join(inputdir, "*.npz"))]
-    print("total {} testing files".format(len(tot_files)))
+    print("total {} files for {}".format(len(tot_files), args.datatype))
+    outdir = os.path.join(utils_dir.trkx_output, args.datatype) if args.output_dir is None else args.output_dir
+    os.makedirs(outdir, exist_ok=True)
+    min_num_hits = args.min_num_hits
+
     nevts = args.max_evts
     if len(tot_files) < nevts:
         nevts = len(tot_files)
 
     all_scores = []
+    tot_time = 0
+    tot_trkx_time = 0
+    tot_writing_time = 0
     for evtid in tot_files:
-        print("Processing event: {}".format(evtid))
+        # read inputs saved from GNN evaluation.
         filedir = os.path.join(inputdir, evtid)
-        evtid = int(evtid[:-4])
-
         array = np.load(filedir)
+
+        # infer event id from the filename
+        # use it to read the initial ground truth for the event
+        evtid = int(evtid[:-4])
         prefix = os.path.join(os.path.expandvars(utils_dir.inputdir),
                             'event{:09d}'.format(evtid))
         hits, particles, truth = trackml.dataset.load_event(prefix, parts=['hits', 'particles', 'truth'])
         hits = hits.merge(truth, on='hit_id', how='left')
         hits = hits.merge(particles, on='particle_id', how='left')
 
-        # print(hits.shape, hits.dtypes)
+
         used_hits = array['I']
         hits = hits[hits.hit_id.isin(used_hits)]
+
         n_nodes = array['I'].shape[0]
-        # print("after filtering", hits.shape)
-        # print("edges: {}".format(array['score'].shape[0]))
-
-        hit_id = hits.hit_id.to_numpy()
-
-        pure_edges = array['score'] > 0
-        # print(pure_edges.shape, np.sum(pure_edges))
+        pure_edges = array['score'] > args.edge_score_cut
         input_matrix = prepare(array['score'][pure_edges], array['senders'][pure_edges], array['receivers'][pure_edges], n_nodes)
-        predicted_tracks = clustering(input_matrix, epsilon=0.25, min_samples=2)
-        print(predicted_tracks.shape)
+        predicted_tracks = clustering(input_matrix, epsilon=args.epsilon, min_samples=args.min_samples)
 
         # compare with the truth tracks that are associated with at least 5 hits
-        aa = hits.groupby("particle_id")['hit_id'].count()
-        pids = aa[aa > 5].index
-        good_hits = hits[hits.particle_id.isin(pids)]
-        score = score_event(good_hits, predicted_tracks)
+        # aa = hits.groupby("particle_id")['hit_id'].count()
+        # pids = aa[aa > min_num_hits].index
+        # good_hits = hits[hits.particle_id.isin(pids)]
+        # score = score_event(good_hits, predicted_tracks)
+        score = score_event(hits, predicted_tracks)
         print("Event {} has track ML score: {:.4f}".format(evtid, score))
         all_scores.append((evtid, score))
 
-    with open(args.outname, 'a') as f:
-        out_str  = "Run Info: " + time.strftime('%d %b %Y %H:%M:%S', time.localtime())+"\n"
+        # save reconstructed tracks into a file
+        np.savez(
+            os.path.join(outdir, "{}.npz".format(evtid)),
+            score=np.array([score]),
+            predicts=predict,
+            truth=hits,
+        )
+
+
+    outname = os.path.join(outdir, "score.txt")
+    ctime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
+    with open(outname, 'a') as f:
+        out_str  = "Run Info: " + ctime +"\n"
         f.write(out_str)
         f.write("\n".join(["{} {:.4f}".format(x, y) for x, y in all_scores]))
         f.write("\n")
 
     _, ax = plt.subplots(1, 1, figsize=(6,5))
     plt.hist(np.array(all_scores), lw=2, histtype='step', bins=50, range=(0.5, 1))
-    plt.savefig("score_summary.pdf")
+    plt.savefig(os.path.join(outdir, "score_summary_{}.pdf".format(ctime))
