@@ -133,34 +133,34 @@ if __name__ == "__main__":
                     outname=os.path.join(outdir, "event{}_roc_{}.pdf".format(evtid, i)),
                     off_interactive=True
                 )
-                # nx_filename = os.path.join(outdir, "event{}_nx_{}.pkl".format(evtid, i))
-                # if os.path.exists(nx_filename):
-                #     G = nx.read_gpickle(nx_filename)
-                # else:
-                #     G = np_to_nx(array)
-                #     nx.write_gpickle(G, nx_filename)
-                # _, ax = plt.subplots(figsize=(8, 8))
-                # plot_nx_with_edge_cmaps(G, weight_name='weight', threshold=0.01, ax=ax)
-                # plt.savefig(os.path.join(outdir, "event{}_display_all_{}.pdf".format(evtid, i)))
-                # plt.clf()
+                nx_filename = os.path.join(outdir, "event{}_nx_{}.pkl".format(evtid, i))
+                if os.path.exists(nx_filename):
+                    G = nx.read_gpickle(nx_filename)
+                else:
+                    G = np_to_nx(array)
+                    nx.write_gpickle(G, nx_filename)
+                _, ax = plt.subplots(figsize=(8, 8))
+                plot_nx_with_edge_cmaps(G, weight_name='weight', threshold=0.01, ax=ax)
+                plt.savefig(os.path.join(outdir, "event{}_display_all_{}.pdf".format(evtid, i)))
+                plt.clf()
 
-                # # do truth
-                # G1 = nx.Graph()
-                # G1.add_nodes_from(G.nodes(data=True))
-                # G1.add_edges_from([edge for edge in G.edges(data=True) if edge[2]['solution'] == 1])
-                # _, ax = plt.subplots(figsize=(8, 8))
-                # plot_nx_with_edge_cmaps(G1, weight_name='weight', threshold=0.01, ax=ax, cmaps=plt.get_cmap("gray"))
-                # plt.savefig(os.path.join(outdir, "event{}_display_truth_{}.pdf".format(evtid, i)))
-                # plt.clf()
+                # do truth
+                G1 = nx.Graph()
+                G1.add_nodes_from(G.nodes(data=True))
+                G1.add_edges_from([edge for edge in G.edges(data=True) if edge[2]['solution'] == 1])
+                _, ax = plt.subplots(figsize=(8, 8))
+                plot_nx_with_edge_cmaps(G1, weight_name='weight', threshold=0.01, ax=ax, cmaps=plt.get_cmap("gray"))
+                plt.savefig(os.path.join(outdir, "event{}_display_truth_{}.pdf".format(evtid, i)))
+                plt.clf()
 
-                # # do fake
-                # G2 = nx.Graph()
-                # G2.add_nodes_from(G.nodes(data=True))
-                # G2.add_edges_from([edge for edge in G.edges(data=True) if edge[2]['solution'] == 0])
-                # _, ax = plt.subplots(figsize=(8, 8))
-                # plot_nx_with_edge_cmaps(G2, weight_name='weight', threshold=0.01, ax=ax, cmaps=plt.get_cmap("Greys"))
-                # plt.savefig(os.path.join(outdir, "event{}_display_fake_{}.pdf".format(evtid, i)))
-                # plt.clf()
+                # do fake
+                G2 = nx.Graph()
+                G2.add_nodes_from(G.nodes(data=True))
+                G2.add_edges_from([edge for edge in G.edges(data=True) if edge[2]['solution'] == 0])
+                _, ax = plt.subplots(figsize=(8, 8))
+                plot_nx_with_edge_cmaps(G2, weight_name='weight', threshold=0.01, ax=ax, cmaps=plt.get_cmap("Greys"))
+                plt.savefig(os.path.join(outdir, "event{}_display_fake_{}.pdf".format(evtid, i)))
+                plt.clf()
 
     outplot = os.path.join(outdir, "tot_roc.pdf")
     if os.path.exists(outplot) and not args.overwrite:
