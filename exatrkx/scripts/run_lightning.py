@@ -62,7 +62,7 @@ if __name__ == "__main__":
     else:
         config_file = args.config
 
-    pp = pprint.PrettyPrinter(indent=4, sort_dicts=False)
+    pp = pprint.PrettyPrinter(indent=4)
 
     with open(config_file) as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
