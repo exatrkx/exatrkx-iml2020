@@ -10,7 +10,7 @@ description="Deep learning based tracking reconstruction"
 
 setup(
     name="exatrkx",
-    version="1.0.0",
+    version="1.1.1",
     description="Library for building tracks with Graph Neural Networks.",
     long_description=description,
     author="Exa.TrkX Collaboration",
