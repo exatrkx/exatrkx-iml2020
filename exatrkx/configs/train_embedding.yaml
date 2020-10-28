@@ -25,8 +25,8 @@ regime:
 - hnm
 - ci
 train_split:
-- 85
-- 10
-- 5
+- 8
+- 1
+- 1
 warmup: 500
 weight: 4

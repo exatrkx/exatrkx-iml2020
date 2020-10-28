@@ -72,7 +72,7 @@ if __name__ == "__main__":
             config[key] = value
 
     pp.pprint(config)
-    ctn = 'y' if args.y else input("Continue? [y/n]: ")
+    ctn = 'y' if args.yes else input("Continue? [y/n]: ")
 
     if ctn.lower() == "y":
         with open(os.path.join(outdir_dict[args.action], config_file), 'w') as f:
