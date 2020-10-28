@@ -19,13 +19,13 @@ except KeyError as e:
 # print("Output: {}".format(output_base))
 detector_path = os.path.join(inputdir, '..', 'detectors.csv')
 
-feature_outdir   = os.path.join(output_base, "feature_store")
-embedding_outdir = os.path.join(output_base, "embedding_output")
-filtering_outdir = os.path.join(output_base, "filtering_output")
-gnn_inputs       = os.path.join(output_base, "gnn_inputs")
-gnn_models       = os.path.join(output_base, "gnn_models")
-gnn_output       = os.path.join(output_base, "gnn_output")
-trkx_output      = os.path.join(output_base, "trkx_output")
+feature_outdir   = os.path.join(output_base, "feature_store") # store converted input information
+embedding_outdir = os.path.join(output_base, "embedding_output") # directory outputs after embedding
+filtering_outdir = os.path.join(output_base, "filtering_output") # directory outputs after filtering
+gnn_inputs       = os.path.join(output_base, "gnn_inputs")       # directory for converted filtering outputs
+gnn_models       = os.path.join(output_base, "gnn_models")       # GNN model outputs
+gnn_output       = os.path.join(output_base, "gnn_eval")         # directory for outputs after evalating GNN
+trkx_output      = os.path.join(output_base, "trkx_output")      # directory for track candidates
 
 outdirs = [feature_outdir, embedding_outdir, filtering_outdir,
         gnn_inputs, gnn_models, gnn_output, trkx_output]

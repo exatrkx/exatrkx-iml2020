@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     # hyperparameters for DB scan
     add_arg("--edge-score-cut", help='edge score cuts', default=0, type=float)
-    add_arg("--epsilon", help="epsilon in DBScan", defaul=0.25, type=float)
+    add_arg("--epsilon", help="epsilon in DBScan", default=0.25, type=float)
     add_arg("--min-samples", help='minimum number of samples in DBScan', default=2, type=int)
 
     # for tracking ML score
@@ -110,7 +110,7 @@ if __name__ == "__main__":
         np.savez(
             os.path.join(outdir, "{}.npz".format(evtid)),
             score=np.array([score]),
-            predicts=predict,
+            predicts=predicted_tracks,
             truth=hits,
         )
 
@@ -125,4 +125,4 @@ if __name__ == "__main__":
 
     _, ax = plt.subplots(1, 1, figsize=(6,5))
     plt.hist(np.array(all_scores), lw=2, histtype='step', bins=50, range=(0.5, 1))
-    plt.savefig(os.path.join(outdir, "score_summary_{}.pdf".format(ctime))
+    plt.savefig(os.path.join(outdir, "score_summary_{}.pdf".format(ctime)))

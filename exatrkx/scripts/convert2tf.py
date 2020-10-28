@@ -10,8 +10,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Convert to TF records")
     add_arg = parser.add_argument
     add_arg("--num-workers", help="number of threads", default=1)
-    add_arg("--input-dir", help='input directory if not predefined one', default=None)
-    add_arg("--output-dir", help='output directory if not predefined one', default=None)
+    add_arg("--input-dir", help='input directory if not predefined one')
+    add_arg("--output-dir", help='output directory if not predefined one')
     add_arg("--no-category", help="no subfolders train,val,test", action='store_true')
     add_arg("--overwrite", help='overwrite the existing files', action='store_true')
     add_arg("--edge-name", help='name of edge matrix in the input', default="edge_index")

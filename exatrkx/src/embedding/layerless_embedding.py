@@ -16,6 +16,7 @@ from pytorch_lightning.callbacks import Callback
 
 # Local imports
 from exatrkx.src.utils_torch import graph_intersection
+from exatrkx.src import utils_torch
 from exatrkx.src.embedding.embedding_base import EmbeddingBase
 
 class LayerlessEmbedding(EmbeddingBase):
@@ -101,10 +102,9 @@ class EmbeddingInferenceCallback(Callback):
                        torch.stack([batch.layerless_true_edges[1], batch.layerless_true_edges[0]], axis=1).T], axis=-1)
 
         # This step should remove reliance on r_val, 
+        clustering = getattr(utils_torch, pl_module.hparams.clustering)
         # and instead compute an r_build based on the EXACT r required to reach target eff/pur
-        # e_spatial = self.clustering(spatial, pl_module.hparams.r_val, pl_module.hparams.knn_val)
-        # e_spatial = radius_graph(spatial, r=pl_module.hparams.r_val, max_num_neighbors=100) 
-        e_spatial = build_edges(spatial, self.hparams["r_val"], 100, res)
+        e_spatial = clustering(spatial, pl_module.hparams.r_val, pl_module.hparams.knn_val)
         e_spatial, y_cluster = graph_intersection(e_spatial, e_bidir)
 
         # batch.e_radius = e_spatial
