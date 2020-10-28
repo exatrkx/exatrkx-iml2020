@@ -81,8 +81,8 @@ def train_and_evaluate(args):
     if dist.rank == 0:
         train_input_dir = os.path.join(utils_dir.gnn_inputs, 'train') if args.train_files is None else args.train_files
         val_input_dir = os.path.join(utils_dir.gnn_inputs, 'val') if args.val_files is None else args.val_files
-        train_files = tf.io.gfile.glob(train_input_dir, "*")
-        eval_files = tf.io.gfile.glob(val_input_dir, "*")
+        train_files = tf.io.gfile.glob(os.path.join(train_input_dir, "*"))
+        eval_files = tf.io.gfile.glob(os.path.join(val_input_dir, "*"))
         ## split the number of files evenly to all ranks
         train_files = [x.tolist() for x in np.array_split(train_files, dist.size)]
         eval_files = [x.tolist() for x in np.array_split(eval_files, dist.size)]
