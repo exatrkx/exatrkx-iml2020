@@ -18,7 +18,7 @@ from exatrkx import SegmentClassifier
 from exatrkx import plot_metrics
 from exatrkx import plot_nx_with_edge_cmaps
 from exatrkx import np_to_nx
-from exatrkx.src import utils_dir
+from exatrkx import utils_dir
 
 ckpt_name = 'checkpoint'
 

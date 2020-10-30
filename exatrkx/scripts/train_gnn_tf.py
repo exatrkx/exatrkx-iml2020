@@ -32,7 +32,7 @@ import sonnet as snt
 
 from exatrkx import graph
 from exatrkx import SegmentClassifier
-from exatrkx.src import utils_dir
+from exatrkx import utils_dir
 
 prog_name = os.path.basename(sys.argv[0])
 

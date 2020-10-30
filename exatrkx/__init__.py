@@ -16,3 +16,4 @@ from exatrkx.src.tfgraphs.utils import plot_nx_with_edge_cmaps
 
 from exatrkx.src.utils_dir import config_dict
 from exatrkx.src.utils_dir import outdir_dict
+from exatrkx.src import utils_dir

@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 import trackml.dataset
 from trackml.score import score_event
-from exatrkx.src import utils_dir
+from exatrkx import utils_dir
 
 
 def prepare(score, senders, receivers, n_nodes):

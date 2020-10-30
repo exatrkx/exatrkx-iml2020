@@ -3,7 +3,7 @@ import os
 
 import tensorflow as tf
 from exatrkx import DoubletsDataset
-from exatrkx.src import utils_dir
+from exatrkx import utils_dir
 
 if __name__ == "__main__":
     import argparse
