@@ -120,7 +120,8 @@ def train_and_evaluate(args):
     model = SegmentClassifier()
 
     checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
-    ckpt_manager = tf.train.CheckpointManager(checkpoint, directory=output_dir, max_to_keep=5)
+    ckpt_manager = tf.train.CheckpointManager(checkpoint, directory=output_dir,
+                                max_to_keep=5, keep_checkpoint_every_n_hours=8)
     logging.info("Loading latest checkpoint from: {}".format(output_dir))
     status = checkpoint.restore(ckpt_manager.latest_checkpoint)
 

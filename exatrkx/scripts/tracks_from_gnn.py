@@ -98,11 +98,11 @@ if __name__ == "__main__":
         predicted_tracks = clustering(input_matrix, epsilon=args.epsilon, min_samples=args.min_samples)
 
         # compare with the truth tracks that are associated with at least 5 hits
-        # aa = hits.groupby("particle_id")['hit_id'].count()
-        # pids = aa[aa > min_num_hits].index
-        # good_hits = hits[hits.particle_id.isin(pids)]
-        # score = score_event(good_hits, predicted_tracks)
-        score = score_event(hits, predicted_tracks)
+        aa = hits.groupby("particle_id")['hit_id'].count()
+        pids = aa[aa > min_num_hits].index
+        good_hits = hits[hits.particle_id.isin(pids)]
+        score = score_event(good_hits, predicted_tracks)
+        # score = score_event(hits, predicted_tracks)
         print("Event {} has track ML score: {:.4f}".format(evtid, score))
         all_scores.append((evtid, score))
 

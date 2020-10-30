@@ -35,6 +35,7 @@ if __name__ == "__main__":
     add_arg("--overwrite", help="overwrite the output", action='store_true')
     add_arg("--max-evts", help='process maximum number of events', type=int, default=1)
     add_arg("--datatype", help="", default="test", choices=utils_dir.datatypes)
+    add_arg("--ckpt-idx", help='index of which to which checkpoint model restores', type=int, default=-1)
 
     args = parser.parse_args()
 
@@ -72,11 +73,11 @@ if __name__ == "__main__":
 
     output_dir = utils_dir.gnn_models if args.model_dir is None else args.model_dir
     checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
-    ckpt_manager = tf.train.CheckpointManager(checkpoint, directory=output_dir, max_to_keep=5)
+    ckpt_manager = tf.train.CheckpointManager(checkpoint, directory=output_dir, max_to_keep=10)
     if os.path.exists(os.path.join(output_dir, ckpt_name)):
         print("Find model:", output_dir)
-        status = checkpoint.restore(ckpt_manager.latest_checkpoint)
-        print("Loaded latest checkpoint from:", output_dir)
+        status = checkpoint.restore(ckpt_manager.checkpoints[args.ckpt_idx])
+        print("Loaded {} checkpoint from {}".format(args.ckpt_idx, output_dir))
     else:
         raise ValueError("cannot find model at:", output_dir)
 

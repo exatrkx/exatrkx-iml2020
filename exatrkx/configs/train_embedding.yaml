@@ -18,7 +18,7 @@ overwrite: true
 patience: 5
 pt_min: 0
 r_train: 1
-r_val: 1.5
+r_val: 1.
 randomisation: 2
 regime:
 - rp
