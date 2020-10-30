@@ -78,9 +78,6 @@ def process(trk_file, min_hits, frac_reco_matched, frac_truth_matched, **kwargs)
     return (n_recotable_trkx, n_reco_trkx, n_good_recos, par_pt, par_pt[particles.particle_id.isin(matched_pids)], score)
 
 
-def plot(reco, truth, outname):
-    pass
-
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Evaluating the performance of track reconstruction")
@@ -96,6 +93,7 @@ if __name__ == "__main__":
     add_arg("--frac-truth-matched", help='fraction of matched hits over total hits in a truth track',
                 default=0.5, type=float)
     add_arg("--num-workers", help='number of workers', default=1, type=int)
+    add_arg("--overwrite", help='overwrite existing file', action='store_true')
     args = parser.parse_args()
 
     input_dir = os.path.join(utils_dir.trkx_output, args.datatype) if args.input_dir is None else args.input_dir
@@ -110,29 +108,39 @@ if __name__ == "__main__":
     all_files = glob.glob(os.path.join(input_dir, "*.npz"))
     n_tot_files = len(all_files)
     max_evts = args.max_evts if args.max_evts > 0 else n_tot_files
-    print("Out of {} events processing {} events with {} workers".format(n_tot_files, max_evts. args.num_workers))
+    print("Out of {} events processing {} events with {} workers".format(n_tot_files, max_evts, args.num_workers))
 
-    with Pool(args.num_workers) as p:
-        process_fnc = partial(process, **args.__dict__)
-        res = p.map(process_fnc, all_files[:max_evts])
+    out_array_name = os.path.join(outdir, "{}_trkx_pt.npz".format(out_prefix))
+    if not os.path.exists(out_array_name) or args.overwrite:
 
-    n_reconstructable_trkx = sum([x[0] for x in res])
-    n_reconstructed_trkx = sum([x[1] for x in res])
-    n_reconstructed_matched = sum([x[2] for x in res])
-    truth_pt = np.concatenate([np.array(x[3]) for x in res])
-    reco_pt = np.concatenate([np.array(x[4]) for x in res])
-    scores = [x[5] for x in res]
+        with Pool(args.num_workers) as p:
+            process_fnc = partial(process, **args.__dict__)
+            res = p.map(process_fnc, all_files[:max_evts])
 
-    outname = os.path.join(outdir, "{}_summary.txt".format(out_prefix))
-    ctime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
-    with open(outname, 'a') as f:
-        out_str  = "Run Info: " + ctime +"\n"
-        f.write("Processed {} events from {}\n".format(max_evts, input_dir))
-        f.write("Reconstructable tracks:         {}\n".format(n_reconstructable_trkx))
-        f.write("Reconstructed tracks:           {}\n".format(n_reconstructed_matched))
-        f.write("Reconstructable tracks Matched: {}\n".format(n_reconstructed_matched))
-        f.write("Tracking efficiency:            {:.4f}\n".format(n_reconstructed_matched/n_reconstructable_trkx))
-        f.write("Tracking purity?:               {:.4f}\n".format(n_reconstructed_matched/n_reconstructed_trkx))
+        n_reconstructable_trkx = sum([x[0] for x in res])
+        n_reconstructed_trkx = sum([x[1] for x in res])
+        n_reconstructed_matched = sum([x[2] for x in res])
+        truth_pt = np.concatenate([np.array(x[3]) for x in res])
+        reco_pt = np.concatenate([np.array(x[4]) for x in res])
+        scores = [x[5] for x in res]
+
+        outname = os.path.join(outdir, "{}_summary.txt".format(out_prefix))
+        ctime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
+        with open(outname, 'a') as f:
+            out_str  = "Run Info: " + ctime +"\n"
+            f.write("Processed {} events from {}\n".format(max_evts, input_dir))
+            f.write("Reconstructable tracks:         {}\n".format(n_reconstructable_trkx))
+            f.write("Reconstructed tracks:           {}\n".format(n_reconstructed_matched))
+            f.write("Reconstructable tracks Matched: {}\n".format(n_reconstructed_matched))
+            f.write("Tracking efficiency:            {:.4f}\n".format(n_reconstructed_matched/n_reconstructable_trkx))
+            f.write("Tracking purity?:               {:.4f}\n".format(n_reconstructed_matched/n_reconstructed_trkx))
+
+        np.savez(out_array_name, truth_pt=truth_pt, reco_pt=reco_pt, scores=scores)
+    else:
+        print("Reuse the existing file: {}".format(out_array_name))
+        out_array = np.load(out_array_name)
+        truth_pt = out_array['truth_pt']
+        reco_pt = out_array['reco_pt']
 
     # plot the efficiency as a function of pT
     _, ax = get_plot()
@@ -141,13 +149,16 @@ if __name__ == "__main__":
     ax.set_xlabel("pT [GeV]", fontsize=fontsize)
     ax.set_ylabel("Events", fontsize=fontsize)
     plt.legend()
-    plt.savefig(os.path.join(outdir, "{}_pt_matched_{}.pdf".format(out_prefix, ctime)))
+    plt.savefig(os.path.join(outdir, "{}_pt_matched.pdf".format(out_prefix)))
 
     _, ax = get_plot()
     matched_ratio, matched_ratio_err = get_ratio(good_vals, reco_vals)
-    xvals = [0.5*(x[0]+x[1]) for x in pairwise(pt_bins)][1:]
-    ax.errorbar(xvals, matched_ratio, yerr=matched_ratio_err, lw=2)
+    xvals = [0.5*(x[1]+x[0]) for x in pairwise(pt_bins)][1:]
+    xerrs = [0.5*(x[1]-x[0]) for x in pairwise(pt_bins)][1:]
+    ax.errorbar(xvals, matched_ratio, yerr=matched_ratio_err, fmt='o', xerr=xerrs, lw=2)
     ax.set_xlim(0, 5)
     ax.set_xlabel("pT [GeV]")
     ax.set_ylabel("Track efficiency")
-    plt.savefig(os.path.join(outdir, "{}_efficiency_{}.pdf".format(out_prefix, ctime)))
+    ax.set_yticks(np.arange(0.5, 1, step=0.05))
+    plt.grid(True)
+    plt.savefig(os.path.join(outdir, "{}_efficiency.pdf".format(out_prefix)))
