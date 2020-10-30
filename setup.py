@@ -43,6 +43,7 @@ setup(
         'exatrkx/scripts/train_gnn_tf.py',
         'exatrkx/scripts/eval_gnn_tf.py',
         'exatrkx/scripts/tracks_from_gnn.py',
+        'exatrkx/scripts/eval_reco_trkx.py',
         'exatrkx/scripts/install_geometric.sh',
     ],
 )
