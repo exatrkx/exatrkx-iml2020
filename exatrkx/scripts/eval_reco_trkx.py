@@ -43,6 +43,12 @@ def pairwise(iterable):
   next(b, None)
   return zip(a, b)
 
+def add_mean_std(array, x, y, ax, color='k', dy=0.3, digits=2, fontsize=12, with_std=True):
+    this_mean, this_std = np.mean(array), np.std(array)
+    ax.text(x, y, "Mean: {0:.{1}f}".format(this_mean, digits), color=color, fontsize=12)
+    if with_std:
+        ax.text(x, y-dy, "Standard Deviation: {0:.{1}f}".format(this_std, digits), color=color, fontsize=12)
+
 
 def process(trk_file, min_hits, frac_reco_matched, frac_truth_matched, **kwargs):
     evtid = int(os.path.basename(trk_file)[:-4])
@@ -107,7 +113,7 @@ if __name__ == "__main__":
 
     all_files = glob.glob(os.path.join(input_dir, "*.npz"))
     n_tot_files = len(all_files)
-    max_evts = args.max_evts if args.max_evts > 0 else n_tot_files
+    max_evts = args.max_evts if args.max_evts > 0 and args.max_evts <= n_tot_files else n_tot_files
     print("Out of {} events processing {} events with {} workers".format(n_tot_files, max_evts, args.num_workers))
 
     out_array_name = os.path.join(outdir, "{}_trkx_pt.npz".format(out_prefix))
@@ -122,7 +128,7 @@ if __name__ == "__main__":
         n_reconstructed_matched = sum([x[2] for x in res])
         truth_pt = np.concatenate([np.array(x[3]) for x in res])
         reco_pt = np.concatenate([np.array(x[4]) for x in res])
-        scores = [x[5] for x in res]
+        scores = np.array([x[5] for x in res])
 
         outname = os.path.join(outdir, "{}_summary.txt".format(out_prefix))
         ctime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
@@ -141,6 +147,7 @@ if __name__ == "__main__":
         out_array = np.load(out_array_name)
         truth_pt = out_array['truth_pt']
         reco_pt = out_array['reco_pt']
+        scores = out_array['scores']
 
     # plot the efficiency as a function of pT
     _, ax = get_plot()
@@ -159,7 +166,14 @@ if __name__ == "__main__":
     ax.set_xlim(0, 5)
     ax.set_xlabel("pT [GeV]")
     ax.set_ylabel("Track efficiency")
-    ax.set_yticks(np.arange(0.5, 1, step=0.05))
+    ax.set_yticks(np.arange(0.5, 1.05, step=0.05))
     ax.text(1, 0.8, "pT bins: [{}] GeV".format(", ".join(["{:.1f}".format(x) for x in pt_bins[1:]])))
     plt.grid(True)
     plt.savefig(os.path.join(outdir, "{}_efficiency.pdf".format(out_prefix)))
+
+    _, ax = get_plot()
+    ax.hist(scores)    
+    add_mean_std(scores, 0.895, 6, ax=ax, dy=0.5, digits=3)
+    ax.set_xlabel("trackML score")
+    ax.set_ylabel("Events")
+    plt.savefig(os.path.join(outdir, "{}_summary_score.pdf".format(out_prefix)))

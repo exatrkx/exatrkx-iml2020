@@ -2,6 +2,8 @@
 import time
 import os
 import glob
+from multiprocessing import Pool
+from functools import partial
 
 import numpy as np
 import networkx as nx
@@ -28,7 +30,7 @@ def prepare(score, senders, receivers, n_nodes):
                                                 np.vstack([e_csr.tocoo().col, e_csr.tocoo().row])])))
     return e_csr_bi
 
-def clustering(e_csr_bi, epsilon=5, min_samples=1):
+def clustering(used_hits, e_csr_bi, epsilon=5, min_samples=1):
     # dbscan clustering
     clustering = DBSCAN(eps=epsilon, metric='precomputed', min_samples=1).fit_predict(e_csr_bi)
     track_labels = np.vstack([np.unique(e_csr_bi.tocoo().row), clustering[np.unique(e_csr_bi.tocoo().row)]])
@@ -37,6 +39,41 @@ def clustering(e_csr_bi, epsilon=5, min_samples=1):
     new_hit_id = np.apply_along_axis(lambda x: used_hits[x], 0, track_labels.hit_id.values)
     tracks = pd.DataFrame.from_dict({"hit_id": new_hit_id, "track_id": track_labels.track_id})
     return tracks
+
+
+def process(filename, edge_score_cut, epsilon, min_samples, min_num_hits, outdir, **kwargs):
+    evtid = int(os.path.basename(filename)[:-4])
+    array = np.load(filename)
+
+    # infer event id from the filename
+    # use it to read the initial ground truth for the event
+    prefix = os.path.join(os.path.expandvars(utils_dir.inputdir),
+                        'event{:09d}'.format(evtid))
+    hits, particles, truth = trackml.dataset.load_event(prefix, parts=['hits', 'particles', 'truth'])
+    hits = hits.merge(truth, on='hit_id', how='left')
+    hits = hits.merge(particles, on='particle_id', how='left')
+
+
+    used_hits = array['I']
+    hits = hits[hits.hit_id.isin(used_hits)]
+
+    n_nodes = array['I'].shape[0]
+    pure_edges = array['score'] > edge_score_cut
+    input_matrix = prepare(array['score'][pure_edges], array['senders'][pure_edges], array['receivers'][pure_edges], n_nodes)
+    predicted_tracks = clustering(used_hits, input_matrix, epsilon=epsilon, min_samples=min_samples)
+
+    # compare with the truth tracks that are associated with at least 5 hits
+    aa = hits.groupby("particle_id")['hit_id'].count()
+    pids = aa[aa > min_num_hits].index
+    good_hits = hits[hits.particle_id.isin(pids)]
+    score = score_event(good_hits, predicted_tracks)
+
+    # save reconstructed tracks into a file
+    np.savez(
+        os.path.join(outdir, "{}.npz".format(evtid)),
+        score=np.array([score]),
+        predicts=predicted_tracks,
+    )
 
 
 if __name__ == "__main__":
@@ -48,6 +85,7 @@ if __name__ == "__main__":
     add_arg("--input-dir", help='input directory')
     add_arg("--output-dir", help='output file directory for track candidates')
     add_arg("--datatype", help="", default="test", choices=utils_dir.datatypes)
+    add_arg("--num-workers", help='number of threads', default=1, type=int)
 
     # hyperparameters for DB scan
     add_arg("--edge-score-cut", help='edge score cuts', default=0, type=float)
@@ -60,69 +98,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     inputdir = os.path.join(utils_dir.gnn_output, args.datatype) if args.input_dir is None else args.input_dir
-    tot_files = [os.path.basename(x) for x in glob.glob(os.path.join(inputdir, "*.npz"))]
-    print("total {} files for {}".format(len(tot_files), args.datatype))
     outdir = os.path.join(utils_dir.trkx_output, args.datatype) if args.output_dir is None else args.output_dir
     os.makedirs(outdir, exist_ok=True)
     min_num_hits = args.min_num_hits
 
-    nevts = args.max_evts
-    if len(tot_files) < nevts:
-        nevts = len(tot_files)
+    all_files = glob.glob(os.path.join(inputdir, "*.npz"))
+    n_tot_files = len(all_files)
+    max_evts = args.max_evts if args.max_evts > 0 and args.max_evts <= n_tot_files else n_tot_files
+    print("Out of {} events processing {} events with {} workers".format(n_tot_files, max_evts, args.num_workers))
 
-    all_scores = []
-    tot_time = 0
-    tot_trkx_time = 0
-    tot_writing_time = 0
-    for evtid in tot_files:
-        # read inputs saved from GNN evaluation.
-        filedir = os.path.join(inputdir, evtid)
-        array = np.load(filedir)
-
-        # infer event id from the filename
-        # use it to read the initial ground truth for the event
-        evtid = int(evtid[:-4])
-        prefix = os.path.join(os.path.expandvars(utils_dir.inputdir),
-                            'event{:09d}'.format(evtid))
-        hits, particles, truth = trackml.dataset.load_event(prefix, parts=['hits', 'particles', 'truth'])
-        hits = hits.merge(truth, on='hit_id', how='left')
-        hits = hits.merge(particles, on='particle_id', how='left')
-
-
-        used_hits = array['I']
-        hits = hits[hits.hit_id.isin(used_hits)]
-
-        n_nodes = array['I'].shape[0]
-        pure_edges = array['score'] > args.edge_score_cut
-        input_matrix = prepare(array['score'][pure_edges], array['senders'][pure_edges], array['receivers'][pure_edges], n_nodes)
-        predicted_tracks = clustering(input_matrix, epsilon=args.epsilon, min_samples=args.min_samples)
-
-        # compare with the truth tracks that are associated with at least 5 hits
-        aa = hits.groupby("particle_id")['hit_id'].count()
-        pids = aa[aa > min_num_hits].index
-        good_hits = hits[hits.particle_id.isin(pids)]
-        score = score_event(good_hits, predicted_tracks)
-        # score = score_event(hits, predicted_tracks)
-        print("Event {} has track ML score: {:.4f}".format(evtid, score))
-        all_scores.append((evtid, score))
-
-        # save reconstructed tracks into a file
-        np.savez(
-            os.path.join(outdir, "{}.npz".format(evtid)),
-            score=np.array([score]),
-            predicts=predicted_tracks,
-            truth=hits,
-        )
-
-
-    outname = os.path.join(outdir, "score.txt")
-    ctime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
-    with open(outname, 'a') as f:
-        out_str  = "Run Info: " + ctime +"\n"
-        f.write(out_str)
-        f.write("\n".join(["{} {:.4f}".format(x, y) for x, y in all_scores]))
-        f.write("\n")
-
-    _, ax = plt.subplots(1, 1, figsize=(6,5))
-    plt.hist(np.array(all_scores), lw=2, histtype='step', bins=50, range=(0.5, 1))
-    plt.savefig(os.path.join(outdir, "score_summary_{}.pdf".format(ctime)))
+    with Pool(args.num_workers) as p:
+        process_fnc = partial(process, outdir=outdir, **args.__dict__)
+        p.map(process_fnc, all_files[:max_evts])
