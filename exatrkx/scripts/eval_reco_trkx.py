@@ -160,5 +160,6 @@ if __name__ == "__main__":
     ax.set_xlabel("pT [GeV]")
     ax.set_ylabel("Track efficiency")
     ax.set_yticks(np.arange(0.5, 1, step=0.05))
+    ax.text(1, 0.8, "pT bins: [{}] GeV".format(", ".join(["{:.1f}".format(x) for x in pt_bins[1:]])))
     plt.grid(True)
     plt.savefig(os.path.join(outdir, "{}_efficiency.pdf".format(out_prefix)))
