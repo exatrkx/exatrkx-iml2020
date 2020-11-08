@@ -105,8 +105,8 @@ if __name__ == "__main__":
         array = {
             "receivers": inputs_te.receivers,
             "senders": inputs_te.senders,
-            "score": tf.reshape(outputs_te[-1].edges, (-1, )),
-            "truth": tf.reshape(targets_te.edges, (-1, )),
+            "score": tf.reshape(outputs_te[-1].edges, (-1, )).numpy(),
+            "truth": tf.reshape(targets_te.edges, (-1, )).numpy(),
             "I": hits_id_nsecs,
             "pid": hits_pid_nsecs,
             "x": inputs_te.nodes, 
@@ -126,6 +126,7 @@ if __name__ == "__main__":
 
         if args.inspect:
             y_test = array['truth']
+            threshold = 0.8
             for i in range(num_processing_steps_tr):
                 print("running {} message passing".format(i))
                 score = tf.reshape(outputs_te[i].edges, (-1, )).numpy()
@@ -141,7 +142,7 @@ if __name__ == "__main__":
                     G = np_to_nx(array)
                     nx.write_gpickle(G, nx_filename)
                 _, ax = plt.subplots(figsize=(8, 8))
-                plot_nx_with_edge_cmaps(G, weight_name='weight', threshold=0.01, ax=ax)
+                plot_nx_with_edge_cmaps(G, weight_name='weight', threshold=threshold, ax=ax)
                 plt.savefig(os.path.join(outdir, "event{}_display_all_{}.pdf".format(evtid, i)))
                 plt.clf()
 
@@ -150,7 +151,7 @@ if __name__ == "__main__":
                 G1.add_nodes_from(G.nodes(data=True))
                 G1.add_edges_from([edge for edge in G.edges(data=True) if edge[2]['solution'] == 1])
                 _, ax = plt.subplots(figsize=(8, 8))
-                plot_nx_with_edge_cmaps(G1, weight_name='weight', threshold=0.01, ax=ax, cmaps=plt.get_cmap("gray"))
+                plot_nx_with_edge_cmaps(G1, weight_name='weight', threshold=threshold, ax=ax, cmaps=plt.get_cmap("gray"))
                 plt.savefig(os.path.join(outdir, "event{}_display_truth_{}.pdf".format(evtid, i)))
                 plt.clf()
 
@@ -159,7 +160,7 @@ if __name__ == "__main__":
                 G2.add_nodes_from(G.nodes(data=True))
                 G2.add_edges_from([edge for edge in G.edges(data=True) if edge[2]['solution'] == 0])
                 _, ax = plt.subplots(figsize=(8, 8))
-                plot_nx_with_edge_cmaps(G2, weight_name='weight', threshold=0.01, ax=ax, cmaps=plt.get_cmap("Greys"))
+                plot_nx_with_edge_cmaps(G2, weight_name='weight', threshold=threshold, ax=ax, cmaps=plt.get_cmap("Greys"))
                 plt.savefig(os.path.join(outdir, "event{}_display_fake_{}.pdf".format(evtid, i)))
                 plt.clf()
 
