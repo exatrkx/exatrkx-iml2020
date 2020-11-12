@@ -104,17 +104,17 @@ def start_view(args):
     del ax
 
     e_spatial_np_t = e_spatial_np.T
-    def plot_edges(xname, yname, xlabel, ylabel, outname, with_edges=True, no_axis=False):
+    layerless_true_edges_t = layerless_true_edges.T # same as e
+    def plot_edges(xname, yname, xlabel, ylabel, outname, with_edges=True, no_axis=False, edges=e_spatial_np_t):
         fig = plt.figure(figsize=(8,8))
         ax = fig.add_subplot(111)
         for pid in sel_pids:
             ax.scatter(hits[hits.particle_id == pid][xname].values, hits[hits.particle_id == pid][yname].values)
         # add edges
         if with_edges:
-        
-            for iedge in range(e_spatial_np.shape[1]):
-                ax.plot(hits.iloc[e_spatial_np_t[iedge]][xname].values,\
-                        hits.iloc[e_spatial_np_t[iedge]][yname].values, color='k', alpha=0.3, lw=1.)
+            for iedge in range(edges.shape[0]):
+                ax.plot(hits.iloc[edges[iedge]][xname].values,\
+                        hits.iloc[edges[iedge]][yname].values, color='k', alpha=0.3, lw=1.)
         ax.set_xlabel(xlabel, fontsize=16)
         ax.set_ylabel(ylabel, fontsize=16)
         if xname=='z':
@@ -138,6 +138,8 @@ def start_view(args):
 
     plot_edges("x", 'y', 'x', 'y', 'embedding_edges_x_y')
     plot_edges("z", 'r', 'z', 'r', 'embedding_edges_z_r')
+    plot_edges("x", 'y', 'x', 'y', 'embedding_edges_truth_x_y', edges=layerless_true_edges_t)
+    plot_edges("z", 'r', 'z', 'r', 'embedding_edges_truth_z_r', edges=layerless_true_edges_t)
     plot_edges("x", 'y', 'x', 'y', 'embedding_hits_truth_x_y', with_edges=False)
     plot_edges("z", 'r', 'z', 'r', 'embedding_hits_truth_z_r', with_edges=False)
     plot_hits("x", 'y', 'embedding_hits_x_y')

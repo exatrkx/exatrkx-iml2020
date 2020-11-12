@@ -24,6 +24,13 @@ pt_configs = {
     'lw': 2,
     'log': False
 }
+eta_bins = np.arange(-4, 4.4, step=0.4)
+eta_configs = {
+    'bins': eta_bins,
+    'histtype': 'step',
+    'lw': 2,
+    'log': False
+}
 
 
 def get_plot():
@@ -33,7 +40,7 @@ def get_plot():
 
 def get_ratio(x_vals, y_vals):
     res = [x/y if y!=0 else 0.0 for x,y in zip(x_vals, y_vals)]
-    err = [x/y * math.sqrt((x+y)/(x*y)) if y!=0 else 0.0 for x,y in zip(x_vals, y_vals)]
+    err = [x/y * math.sqrt((x+y)/(x*y)) if y!=0 and x!=0 else 0.0 for x,y in zip(x_vals, y_vals)]
     return res[1:], err[1:]
 
 
@@ -49,6 +56,29 @@ def add_mean_std(array, x, y, ax, color='k', dy=0.3, digits=2, fontsize=12, with
     if with_std:
         ax.text(x, y-dy, "Standard Deviation: {0:.{1}f}".format(this_std, digits), color=color, fontsize=12)
 
+def make_cmp_plot(xarray, yarray, xlegend, ylegend, configs, xlabel, ylabel, ratio_label, outname):
+    _, ax = get_plot()
+    m_vals, bins, _ = ax.hist(xarray, **configs, label=xlegend)
+    n_vals, _, _ = ax.hist(yarray, **configs, label=ylegend)
+    ax.set_xlabel(xlabel, fontsize=fontsize)
+    ax.set_ylabel(ylabel, fontsize=fontsize)
+    plt.legend()
+    plt.savefig("{}.pdf".format(outname))
+
+    _, ax = get_plot()
+
+    ratio, ratio_err = get_ratio(m_vals, n_vals)
+    xvals = [0.5*(x[1]+x[0]) for x in pairwise(bins)][1:]
+    xerrs = [0.5*(x[1]-x[0]) for x in pairwise(bins)][1:]
+    # print(xvals)
+    ax.errorbar(xvals, ratio, yerr=ratio_err, fmt='o', xerr=xerrs, lw=2)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ratio_label)
+    ax.set_yticks(np.arange(0.5, 1.05, step=0.05))
+    ax.set_ylim(0.5, 1.05)
+    # ax.text(1, 0.8, "bins: [{}] GeV".format(", ".join(["{:.1f}".format(x) for x in pt_bins[1:]])))
+    plt.grid(True)
+    plt.savefig(os.path.join(outdir, "{}_ratio.pdf".format(outname)))
 
 def process(trk_file, min_hits, frac_reco_matched, frac_truth_matched, **kwargs):
     evtid = int(os.path.basename(trk_file)[:-4])
@@ -65,6 +95,9 @@ def process(trk_file, min_hits, frac_reco_matched, frac_truth_matched, **kwargs)
     hits = hits[hits.nhits >= min_hits]
     particles = particles[particles.nhits >= min_hits]
     par_pt = np.sqrt(particles.px**2 + particles.py**2)
+    momentum = np.sqrt(particles.px**2 + particles.py**2 + particles.pz**2)
+    ptheta = np.arccos(particles.pz/momentum)
+    peta = -np.log(np.tan(0.5*ptheta)) 
 
     tracks = _analyze_tracks(hits, submission)
     purity_rec = np.true_divide(tracks['major_nhits'], tracks['nhits'])
@@ -77,11 +110,9 @@ def process(trk_file, min_hits, frac_reco_matched, frac_truth_matched, **kwargs)
     n_recotable_trkx = particles.shape[0]
     n_reco_trkx = tracks.shape[0]
     n_good_recos = np.sum(good_track)
-    # truth_pt_vals, _  = np.histogram(par_pt, bins=pt_bins)
-    # reco_pt_vals, _ = np.histogram(par_pt[particles.particle_id.isin(matched_pids)], bins=pt_bins)
+    matched_idx = particles.particle_id.isin(matched_pids).values
 
-
-    return (n_recotable_trkx, n_reco_trkx, n_good_recos, par_pt, par_pt[particles.particle_id.isin(matched_pids)], score)
+    return (n_recotable_trkx, n_reco_trkx, n_good_recos, par_pt, peta, matched_idx, score)
 
 
 if __name__ == "__main__":
@@ -115,20 +146,26 @@ if __name__ == "__main__":
     n_tot_files = len(all_files)
     max_evts = args.max_evts if args.max_evts > 0 and args.max_evts <= n_tot_files else n_tot_files
     print("Out of {} events processing {} events with {} workers".format(n_tot_files, max_evts, args.num_workers))
+    print("Output directory:", outdir)
 
-    out_array_name = os.path.join(outdir, "{}_trkx_pt.npz".format(out_prefix))
+    out_array_name = os.path.join(outdir, "{}_trkx_pt_eta.npz".format(out_prefix))
     if not os.path.exists(out_array_name) or args.overwrite:
 
         with Pool(args.num_workers) as p:
             process_fnc = partial(process, **args.__dict__)
             res = p.map(process_fnc, all_files[:max_evts])
 
+        # merge results from each process
         n_reconstructable_trkx = sum([x[0] for x in res])
         n_reconstructed_trkx = sum([x[1] for x in res])
         n_reconstructed_matched = sum([x[2] for x in res])
         truth_pt = np.concatenate([np.array(x[3]) for x in res])
-        reco_pt = np.concatenate([np.array(x[4]) for x in res])
-        scores = np.array([x[5] for x in res])
+        truth_eta = np.concatenate([np.array(x[4]) for x in res])
+        matched_idx = np.concatenate([np.array(x[5]) for x in res])
+        scores = np.array([x[6] for x in res])
+
+        reco_pt = truth_pt[matched_idx]
+        reco_eta = truth_eta[matched_idx]
 
         outname = os.path.join(outdir, "{}_summary.txt".format(out_prefix))
         ctime = time.strftime('%Y%m%d-%H%M%S', time.localtime())
@@ -141,35 +178,31 @@ if __name__ == "__main__":
             f.write("Tracking efficiency:            {:.4f}\n".format(n_reconstructed_matched/n_reconstructable_trkx))
             f.write("Tracking purity?:               {:.4f}\n".format(n_reconstructed_matched/n_reconstructed_trkx))
 
-        np.savez(out_array_name, truth_pt=truth_pt, reco_pt=reco_pt, scores=scores)
+        np.savez(out_array_name, truth_pt=truth_pt, reco_pt=reco_pt, scores=scores, truth_eta=truth_eta, reco_eta=reco_eta)
     else:
         print("Reuse the existing file: {}".format(out_array_name))
         out_array = np.load(out_array_name)
         truth_pt = out_array['truth_pt']
         reco_pt = out_array['reco_pt']
+        truth_eta = out_array['truth_eta']
+        reco_eta = out_array['reco_eta']
         scores = out_array['scores']
 
-    # plot the efficiency as a function of pT
-    _, ax = get_plot()
-    reco_vals, _, _ = ax.hist(truth_pt, **pt_configs, label="Reconstructable")
-    good_vals, _, _ = ax.hist(reco_pt, **pt_configs, label="Matched")
-    ax.set_xlabel("pT [GeV]", fontsize=fontsize)
-    ax.set_ylabel("Events", fontsize=fontsize)
-    plt.legend()
-    plt.savefig(os.path.join(outdir, "{}_pt_matched.pdf".format(out_prefix)))
+    # plot the efficiency as a function of pT, eta
+    make_cmp_plot_fn = partial(make_cmp_plot, xlegend="Matched", ylegend="Reconstructable",
+                        ylabel="Events", ratio_label='Track efficiency')
+    make_cmp_plot_fn(reco_pt, truth_pt, configs=pt_configs, xlabel="pT [GeV]", outname=os.path.join(outdir, "{}_pt".format(out_prefix)))
+    # print(reco_eta.shape, truth_eta.shape)
+    make_cmp_plot_fn(reco_eta, truth_eta, configs=eta_configs, xlabel=r"$\eta$", outname=os.path.join(outdir, "{}_eta".format(out_prefix)))
 
-    _, ax = get_plot()
-    matched_ratio, matched_ratio_err = get_ratio(good_vals, reco_vals)
-    xvals = [0.5*(x[1]+x[0]) for x in pairwise(pt_bins)][1:]
-    xerrs = [0.5*(x[1]-x[0]) for x in pairwise(pt_bins)][1:]
-    ax.errorbar(xvals, matched_ratio, yerr=matched_ratio_err, fmt='o', xerr=xerrs, lw=2)
-    ax.set_xlim(0, 5)
-    ax.set_xlabel("pT [GeV]")
-    ax.set_ylabel("Track efficiency")
-    ax.set_yticks(np.arange(0.5, 1.05, step=0.05))
-    ax.text(1, 0.8, "pT bins: [{}] GeV".format(", ".join(["{:.1f}".format(x) for x in pt_bins[1:]])))
-    plt.grid(True)
-    plt.savefig(os.path.join(outdir, "{}_efficiency.pdf".format(out_prefix)))
+    pt_ths = [0.5, 1]
+    for pt_th in pt_ths:
+        reco_eta_pt = reco_eta[reco_pt >= pt_th]
+        truth_eta_pt = truth_eta[truth_pt >= pt_th]
+        make_cmp_plot_fn(reco_eta_pt, truth_eta_pt, configs=eta_configs,
+                xlabel=r"$\eta$ of tracks with pT > {} GeV".format(pt_th),
+                outname=os.path.join(outdir, "{}_eta_pt_gt{}GeV".format(out_prefix, pt_th)))
+
 
     _, ax = get_plot()
     ax.hist(scores)    

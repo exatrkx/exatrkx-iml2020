@@ -70,7 +70,8 @@ def plot_metrics(odd, tdd, odd_th=0.5, tdd_th=0.5, outname='roc_graph_nets.eps',
 
     auc = sklearn.metrics.auc(fpr, tpr)
     print("AUC: %.4f" % auc)
-
+    y_p_5 = odd > 0.5
+    print("Fake rejection at 0.5: {:.6f}".format(1-y_true[y_p_5 & ~y_true].shape[0]/y_true[~y_true].shape[0]))
 
     fig, axs = plt.subplots(2, 2, figsize=(12, 10), constrained_layout=True)
     axs = axs.flatten()
