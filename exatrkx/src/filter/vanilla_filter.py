@@ -15,10 +15,10 @@ from pytorch_lightning.callbacks import Callback
 
 
 # Local imports
-from exatrkx.src.filter.filter_base import FilterBase
+from exatrkx.src.filter.filter_base import FilterBaseBalanced
 from exatrkx.src.utils_torch import graph_intersection
 
-class VanillaFilter(FilterBase):
+class VanillaFilter(FilterBaseBalanced):
 
     def __init__(self, hparams):
         super().__init__(hparams)

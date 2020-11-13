@@ -34,7 +34,7 @@ eta_configs = {
 
 
 def get_plot():
-    fig, ax = plt.subplots(figsize=(8, 8), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(6, 6), constrained_layout=True)
     return fig, ax
 
 
@@ -78,7 +78,7 @@ def make_cmp_plot(xarray, yarray, xlegend, ylegend, configs, xlabel, ylabel, rat
     ax.set_ylim(0.5, 1.05)
     # ax.text(1, 0.8, "bins: [{}] GeV".format(", ".join(["{:.1f}".format(x) for x in pt_bins[1:]])))
     plt.grid(True)
-    plt.savefig(os.path.join(outdir, "{}_ratio.pdf".format(outname)))
+    plt.savefig("{}_ratio.pdf".format(outname))
 
 def process(trk_file, min_hits, frac_reco_matched, frac_truth_matched, **kwargs):
     evtid = int(os.path.basename(trk_file)[:-4])

@@ -45,8 +45,11 @@ class EmbeddingBase(LightningModule):
         self.hparams = hparams
         self.hparams['input_dir'] = utils_dir.feature_outdir
         self.hparams['output_dir'] = utils_dir.embedding_outdir
-        self.trainset, self.valset, self.testset = load_datasets(self.hparams["input_dir"], self.hparams["train_split"])
         self.clustering = getattr(utils_torch, hparams['clustering'])
+
+    def setup(self, stage):
+        self.trainset, self.valset, self.testset = load_datasets(self.hparams["input_dir"], self.hparams["train_split"])
+
 
     def train_dataloader(self):
         if len(self.trainset) > 0:

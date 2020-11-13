@@ -1,7 +1,8 @@
-filter_cut: 0.5
+filter_cut: 0.3
 
 # Dataset parameters
 pt_min: 0
+datatype_names: [train, val, test]
 train_split: [8, 1, 1] # Number of [training, validation, testing] examples
 endcaps: True
 layerwise: False
@@ -10,18 +11,20 @@ noise: False
 adjacent: False
 
 # Model parameters
+clustering: build_edges
 in_channels: 12
 hidden: 512
 nb_layer: 3
 emb_channels: 0
 layernorm: True
-batchnorm: True
-ratio: 4
+batchnorm: False
+ratio: 2
+weight: 2
 val_subset: 0.1
 warmup: 200
 lr: 0.002
 factor: 0.3
-patience: 5
+patience: 8
 regime:
   # - non_ci # This is to NOT include cell information. Switch comment with "ci" to include cell information
   - ci
