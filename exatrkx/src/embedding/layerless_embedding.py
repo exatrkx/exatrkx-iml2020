@@ -107,12 +107,10 @@ class EmbeddingInferenceCallback(Callback):
         e_spatial = clustering(spatial, pl_module.hparams.r_val, pl_module.hparams.knn_val)
         e_spatial, y_cluster = graph_intersection(e_spatial, e_bidir)
 
-        # batch.e_radius = e_spatial
-        # batch.y = torch.from_numpy(y_cluster).float()
+        # remove edges that point from outter region to inner region
+        R_dist = torch.sqrt(batch.x[:,0]**2 + batch.x[:,2]**2) # distance away from origin...
+        e_spatial = e_spatial[:, (R_dist[e_spatial[0]] <= R_dist[e_spatial[1]])]
 
-        # remove duplicated edges
-        e_spatial = e_spatial.cpu().numpy()
-        e_spatial, sel_idx = np.unique(e_spatial, axis=1, return_index=True)
         batch.e_radius = torch.from_numpy(e_spatial)
         batch.y = torch.from_numpy(y_cluster).float()[sel_idx]
 
