@@ -62,6 +62,7 @@ from functools import partial
 # In[10]:
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(device)
+#print(tf.config.list_physical_devices('GPU'))
 
 # ### Setup some hyperparameters and event
 
@@ -108,8 +109,7 @@ b_config['n_files'] = 1
 
 # ### Read the preprocessed data
 # In[8]:
-data = torch.load(os.path.join(utils_dir.feature_outdir, str(evtid)))
-data
+data = torch.load(os.path.join(utils_dir.feature_outdir, str(evtid))).to(device)
 
 # ### Evaluating Embedding
 # In[9]:
@@ -126,7 +126,7 @@ e_config['r_val'] = 1.7
 
 # Load the checkpoint and put the model in the evaluation state.
 # In[11]:
-e_model = LayerlessEmbedding(e_config)
+e_model = LayerlessEmbedding(e_config).to(device)
 e_model.load_state_dict(e_ckpt["state_dict"])
 
 # In[12]:
@@ -137,11 +137,13 @@ e_model.eval()
 # In[13]:
 start = time.time()
 start_cpu = time.process_time()
-spatial = e_model(torch.cat([data.cell_data, data.x], axis=-1))
+with torch.no_grad():
+    spatial = e_model(torch.cat([data.cell_data, data.x], axis=-1)) #.to(device)
 end = time.time()
 end_cpu = time.process_time()
-print("Time for embedding wall: %f cpu: %f" % ((end - start),(end_cpu - start_cpu)))
-
+wall_time=int(round((end - start) * 1000))
+cpu_time=int(round((end_cpu - start_cpu) * 1000))
+print("Time for embedding wall: %f cpu: %f" % (wall_time,cpu_time))
 # ### From embeddeding space form doublets
 
 # `r_val = 1.7` and `knn_val = 500` are the hyperparameters to be studied.
@@ -157,7 +159,8 @@ end = time.time()
 end_cpu = time.process_time()
 print("Time for build edges: %f cpu: %f" % ((end - start),(end_cpu - start_cpu)))
 # In[15]:
-e_spatial = e_spatial.cpu().numpy()
+#e_spatial = e_spatial.cpu().numpy()
+
 
 # Removing edges that point from outer region to inner region, which almost removes half of edges.
 # In[16]:
@@ -198,7 +201,7 @@ output_list = []
 for j in range(chunks):
     subset_ind = torch.chunk(torch.arange(e_spatial.shape[1]), chunks)[j]
     with torch.no_grad():
-        output = f_model(torch.cat([data.cell_data, data.x], axis=-1).to(device), e_spatial[:, subset_ind], emb).squeeze() 
+        output = f_model(torch.cat([data.cell_data, data.x], axis=-1), e_spatial[:, subset_ind], emb).squeeze()  #.to(device)
     output_list.append(output)
     del subset_ind
     del output
@@ -222,7 +225,7 @@ output.shape, e_spatial.shape
 
 # In[25]:
 edge_list = e_spatial[:, output.to('cpu') > f_model.hparams['filter_cut']]
-
+#edge_list = e_spatial[:, output > f_model.hparams['filter_cut']]
 # In[26]:
 edge_list.shape
 
@@ -232,10 +235,11 @@ edge_list.shape
 # In[27]:
 n_nodes = data.x.shape[0]
 n_edges = edge_list.shape[1]
-nodes = data.x.numpy().astype(np.float32)
+#nodes = data.x.numpy().astype(np.float32)
+nodes = data.x.cpu().numpy().astype(np.float32)
 edges = np.zeros((n_edges, 1), dtype=np.float32)
-senders = edge_list[0]
-receivers = edge_list[1]
+senders = edge_list[0].cpu()
+receivers = edge_list[1].cpu()
 
 # In[28]:
 input_datadict = {
@@ -254,8 +258,8 @@ input_graph = utils_tf.data_dicts_to_graphs_tuple([input_datadict])
 # ### Apply GNN
 
 # In[30]:
-start = time.time()
-start_cpu = time.process_time()
+#start = time.time()
+#start_cpu = time.process_time()
 num_processing_steps_tr = 8
 optimizer = snt.optimizers.Adam(0.001)
 model = SegmentClassifier()
@@ -263,12 +267,15 @@ model = SegmentClassifier()
 output_dir = gnn_ckpt_dir
 checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
 ckpt_manager = tf.train.CheckpointManager(checkpoint, directory=output_dir, max_to_keep=10)
-status = checkpoint.restore(ckpt_manager.checkpoints[ckpt_idx])
-end = time.time()
-end_cpu = time.process_time()
-print("Time to load the checkpoint: %f cpu: %f" % ((end - start),(end_cpu - start_cpu)))
-print("Loaded {} checkpoint from {}".format(ckpt_idx, output_dir))
-
+status = checkpoint.restore(ckpt_manager.checkpoints[ckpt_idx]).expect_partial()
+#end = time.time()
+#end_cpu = time.process_time()
+#print("Time to load the checkpoint: %f cpu: %f" % ((end - start),(end_cpu - start_cpu)))
+#print("Loaded {} checkpoint from {}".format(ckpt_idx, output_dir))
+del e_model
+del f_model
+gc.collect()
+torch.cuda.empty_cache()
 # In[31]:
 start = time.time()
 start_cpu = time.process_time()
@@ -282,12 +289,17 @@ print("Time to apply the GNN: %f cpu: %f" % ((end - start),(end_cpu - start_cpu)
 # In[32]:
 start = time.time()
 start_cpu = time.process_time()
-input_matrix = prepare_labeling(tf.squeeze(output_graph.edges).numpy(), senders, receivers, n_nodes)
-predict_tracks = dbscan_clustering(data.hid, input_matrix, dbscan_epsilon, dbscan_minsamples)
+
+input_matrix = prepare_labeling(tf.squeeze(output_graph.edges).cpu().numpy(), senders, receivers, n_nodes)
+predict_tracks = dbscan_clustering(data.hid.cpu(), input_matrix, dbscan_epsilon, dbscan_minsamples)
 end = time.time()
 end_cpu = time.process_time()
 print("Time to get labels with DBSCAN: %f cpu: %f" % ((end - start),(end_cpu - start_cpu)))
 # ### Track Efficiency
+
+end_all = time.time()
+end_all_cpu = time.process_time()
+print("Time from begining to end: %f cpu: %f" % ((end_all - start_all),(end_all_cpu - start_all_cpu)))
 
 # In[34]:
 start = time.time()
@@ -318,13 +330,6 @@ n_recotable_trkx = particles.shape[0]
 n_reco_trkx = tracks.shape[0]
 n_good_recos = np.sum(good_track)
 matched_idx = particles.particle_id.isin(matched_pids).values
-end = time.time()
-end_cpu = time.process_time()
-print("Time to get efficiency: %f cpu: %f" % ((end - start),(end_cpu - start_cpu)))
-
-end_all = time.time()
-end_all_cpu = time.process_time()
-print("Time from begining to end: %f cpu: %f" % ((end_all - start_all),(end_all_cpu - start_all_cpu)))
 
 # In[37]:
 print("Processed {} events from {}".format(evtid, utils_dir.inputdir))
