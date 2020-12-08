@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import logging
 
+import trackml.dataset
+
 #####################################################
 #                   UTILD PANDAS                    #
 #####################################################
@@ -156,43 +158,6 @@ def cartesion_to_spherical(x, y, z):
 def theta_to_eta(theta):
     return -np.log(np.tan(0.5*theta))
 
-def extract_dir_old(hits, cells, detector):
-    angles = []
-
-#     for ii in range(hits.shape[0]):
-#         if (ii%5000)==0:
-#             print(ii)
-#         hit = hits.iloc[ii]
-#         cell = cells[cells.hit_id == hit.hit_id]
-#         module = detector[(detector.volume_id == hit.volume_id)
-#                                 & (detector.layer_id == hit.layer_id)
-#                                 & (detector.module_id == hit.module_id)]
-
-    cells_by_hit = cells.groupby('hit_id')
-    detector_by_module = detector.groupby(['volume_id', 'layer_id', 'module_id'])
-
-    for hit in hits.itertuples():
-
-        if (hit.Index%5000)==0:
-            print("{} out of {}".format(hit.Index,hits.shape[0]))
-        cell = cells_by_hit.get_group(hit.hit_id)
-        module = detector_by_module.get_group(hit[5:8])
-
-        l_x, l_y, l_z = local_angle(cell, module)
-        # convert to global coordinates
-        module_matrix, module_matrix_inv = extract_rotation_matrix(module)
-        g_matrix = module_matrix * [l_x, l_y, l_z]
-        _, g_theta, g_phi = cartesion_to_spherical(g_matrix[0][0], g_matrix[1][0], g_matrix[2][0])
-        _, l_theta, l_phi = cartesion_to_spherical(l_x[0], l_y[0], l_z[0])
-        # to eta and phi...
-        l_eta = theta_to_eta(l_theta)
-        g_eta = theta_to_eta(g_theta[0, 0])
-        lx, ly, lz = l_x[0], l_y[0], l_z[0]
-        angles.append([int(hit.hit_id), l_eta, l_phi, lx, ly, lz, g_eta, g_phi[0, 0]])
-    df_angles = pd.DataFrame(angles, columns=['hit_id', 'leta', 'lphi', 'lx', 'ly', 'lz', 'geta', 'gphi'])
-    hits = hits.merge(df_angles, on='hit_id', how='left')
-    return hits
-
 def get_all_local_angles(hits, cells, detector):
     direction_count_u = cells.groupby(['hit_id']).ch0.agg(['min', 'max'])
     direction_count_v = cells.groupby(['hit_id']).ch1.agg(['min', 'max'])
@@ -232,62 +197,69 @@ def get_all_rotated(hits, detector, l_u, l_v, l_w):
 def extract_dir_new(hits, cells, detector):
     l_u, l_v, l_w = get_all_local_angles(hits, cells, detector)
     g_matrix_all = get_all_rotated(hits, detector, l_u, l_v, l_w)
-    hit_ids = hits['hit_id'].values.tolist()
-
-    l_u = l_u.values.tolist()
-    l_v = l_v.values.tolist()
-    l_w = l_w.tolist()
-    angles = []
-    for ii in range(hits.shape[0]):
-        #if ((ii+1)%50000)==0:
-        #    print(ii)
-        l_x = [l_u[ii]]
-        l_y = [l_v[ii]]
-        l_z = [l_w[ii]]
-        # convert to global coordinates
-        g_matrix = g_matrix_all[ii].reshape(-1,1)
-        g_matrix = np.matrix(g_matrix)
-        _, g_theta, g_phi = cartesion_to_spherical(g_matrix[0][0], g_matrix[1][0], g_matrix[2][0])
-        _, l_theta, l_phi = cartesion_to_spherical(l_x[0], l_y[0], l_z[0])
-        # to eta and phi...
-        l_eta = theta_to_eta(l_theta)
-        g_eta = theta_to_eta(g_theta[0, 0])
-        lx, ly, lz = l_x[0], l_y[0], l_z[0]
-        angles.append([int(hit_ids[ii]), l_eta, l_phi, lx, ly, lz, g_eta, g_phi[0, 0]])
-    df_angles = pd.DataFrame(angles, columns=['hit_id', 'leta', 'lphi', 'lx', 'ly', 'lz', 'geta', 'gphi'])
-    hits = hits.merge(df_angles, on='hit_id', how='left')
-    return hits
+    hit_ids, cell_counts, cell_vals = hits['hit_id'].to_numpy(), hits['cell_count'].to_numpy(), hits['cell_val'].to_numpy()
+    
+    l_u, l_v = l_u.to_numpy(), l_v.to_numpy()
+    
+    _, g_theta, g_phi = np.vstack(cartesion_to_spherical(*list(g_matrix_all.T)))
+    logging.info("G calc")
+    _, l_theta, l_phi = cartesion_to_spherical(l_u, l_v, l_w)
+    logging.info("L calc")
+    l_eta = theta_to_eta(l_theta)
+    g_eta = theta_to_eta(g_theta)
+    
+    angles = np.vstack([hit_ids, cell_counts, cell_vals, l_eta, l_phi, l_u, l_v, l_w, g_eta, g_phi]).T
+    logging.info("Concated")
+    df_angles = pd.DataFrame(angles, columns=['hit_id', 'cell_count', 'cell_val', 'leta', 'lphi', 'lx', 'ly', 'lz', 'geta', 'gphi'])
+    logging.info("DF constructed")
+    
+    return df_angles
 
 def check_diff(h1, h2, name):
     n1 = h1[name].values
     n2 = h2[name].values
     print(name, max(np.absolute(n1-n2)))
 
-def extract_dir(hits, cells, detector_orig, detector_proc):
-    # print(cells.keys())
-    # print(hits.shape, cells.shape)
-    # hits_subset = hits[:100]
-    # cells_subset = cells.loc[cells['hit_id'].isin(hits_subset['hit_id'])]
-    # print(hits_subset.shape, cells_subset.shape, '\n')
-    # t0 = time.time()
-    # # h1 = extract_dir_old(hits_subset, cells, detector_orig)
-    # h1 = extract_dir_old(hits, cells, detector_orig)
-    # t1 = time.time()
-    # print("\nnb2\n")
-    # # h2 = extract_dir_new(hits_subset, cells_subset, detector_proc)
-    # h2 = extract_dir_new(hits, cells, detector_proc)
-    # t2 = time.time()
-    # print("{:8.3f}s for old".format(t1-t0))
-    # print("{:8.3f}s for new".format(t2-t1))
-    # for n in ['x', 'y', 'z', 'leta', 'lphi', 'lx', 'ly', 'lz', 'geta', 'gphi']:
-    #     check_diff(h1, h2, n)
-    # # eta1 = h1['geta'].values
-    # # eta2 = h2['geta'].values
-    # # print(max(eta1-eta2))
-    # print("made it to end")
-    # print(h1[:10])
-    # print(h2[:10])
-    # exit()
+#############################################
+#           FEATURE_AUGMENTATION            #
+#############################################
 
-    return extract_dir_new(hits, cells, detector_proc)
-    # return extract_dir_old(hits, cells, detector_orig)
+def augment_hit_features(hits, cells, detector_orig, detector_proc):
+
+    cell_stats = get_cell_stats(cells)
+    hits['cell_count'] = cell_stats[:,0]
+    hits['cell_val']   = cell_stats[:,1]
+
+    angles = extract_dir_new(hits, cells, detector_proc)
+
+    return angles
+
+def get_cell_stats(cells):
+    hit_cells = cells.groupby(['hit_id']).value.count().values
+    hit_value = cells.groupby(['hit_id']).value.sum().values
+    cell_stats = np.hstack((hit_cells.reshape(-1,1), hit_value.reshape(-1,1)))
+    cell_stats = cell_stats.astype(np.float32)
+    return cell_stats
+
+
+###########################################
+#               EVENT LOADING             #
+###########################################
+
+
+def get_one_event(event_path,
+                  detector_orig,
+                  detector_proc):
+
+    logging.info("Loading trackml")
+    hits, cells = trackml.dataset.load_event(event_path, parts=['hits', 'cells'])
+
+    logging.info("Hits and cells retrieved")
+    
+    try:
+        angles = augment_hit_features(hits, cells, detector_orig, detector_proc)
+    except Exception as e:
+        print(e)
+        raise Exception("Error augmenting hits.")
+        
+    return angles
