@@ -109,10 +109,10 @@ class EmbeddingInferenceCallback(Callback):
 
         # remove edges that point from outter region to inner region
         R_dist = torch.sqrt(batch.x[:,0]**2 + batch.x[:,2]**2) # distance away from origin...
-        e_spatial = e_spatial[:, (R_dist[e_spatial[0]] <= R_dist[e_spatial[1]])]
-
-        batch.e_radius = torch.from_numpy(e_spatial)
-        batch.y = torch.from_numpy(y_cluster).float()[sel_idx]
+        sel_idx = R_dist[e_spatial[0]] <= R_dist[e_spatial[1]]
+        
+        batch.e_radius = e_spatial[:, sel_idx]
+        batch.y = y_cluster.float()[sel_idx]
 
         return batch
 
