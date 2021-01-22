@@ -14,7 +14,7 @@ if __name__ == "__main__":
     add_arg("--output-dir", help='output directory if not predefined one')
     add_arg("--no-category", help="no subfolders train,val,test", action='store_true')
     add_arg("--overwrite", help='overwrite the existing files', action='store_true')
-    add_arg("--edge-name", help='name of edge matrix in the input', default="edge_index")
+    add_arg("--edge-name", help='name of edge matrix in the input', default="e_radius")
     add_arg("--truth-name", help='edge target name in the input', default='y')
     args = parser.parse_args()
     

@@ -46,7 +46,8 @@ class FilterBase(LightningModule):
     def setup(self, stage):
         datatypes = ["train", "val", "test"]
         input_dirs = [os.path.join(self.hparams["input_dir"], datatype) for datatype in datatypes]
-        self.trainset, self.valset, self.testset = [load_dataset(input_dir, hparams["train_split"][i]) for i, input_dir in enumerate(input_dirs)]
+        self.trainset, self.valset, self.testset = [load_dataset(input_dir, self.hparams["train_split"][i])
+                                                    for i, input_dir in enumerate(input_dirs)]
 
     def train_dataloader(self):
         if len(self.trainset) > 0:
@@ -202,22 +203,16 @@ class FilterBaseBalanced(FilterBase):
         else:
             loss = F.binary_cross_entropy_with_logits(output, batch.y[combined_indices], pos_weight = weight)
 
-        result = pl.TrainResult(minimize=loss)
-        result.log('train_loss', loss, prog_bar=True)
-
-        return result
+        # result = pl.TrainResult(minimize=loss)
+        # result.log('train_loss', loss, prog_bar=True)
+        self.log('train_loss', loss, prog_bar=True)
+        return loss
 
     def validation_step(self, batch, batch_idx):
-        
-        result = self.shared_evaluation(batch, batch_idx)
-        
-        return result
+        self.shared_evaluation(batch, batch_idx)
     
     def test_step(self, batch, batch_idx):
-        
-        result = self.shared_evaluation(batch, batch_idx)
-        
-        return result
+        self.shared_evaluation(batch, batch_idx)
         
         
     def shared_evaluation(self, batch, batch_idx):
@@ -247,8 +242,10 @@ class FilterBaseBalanced(FilterBase):
         score_list = torch.cat(score_list)
         cut_list = score_list > self.hparams["filter_cut"]
         
-        result = pl.EvalResult(checkpoint_on=val_loss)
-        result.log('val_loss', val_loss)
+        # result = pl.EvalResult(checkpoint_on=val_loss)
+        self.log("val_loss", val_loss, prog_bar=True)
+        # result = pl.TrainResult(minimize=val_loss)
+        # result.log('val_loss', val_loss)
 
         #Edge filter performance
         edge_positive = cut_list.sum().float()
@@ -256,14 +253,11 @@ class FilterBaseBalanced(FilterBase):
             y_pid = batch.pid[batch.e_radius[0]] == batch.pid[batch.e_radius[1]]
             edge_true = y_pid.sum()
             edge_true_positive = (y_pid & cut_list).sum().float()
-            self.logger.experiment.log({"roc" : wandb.plot.roc_curve( y_pid.cpu(), torch.stack([1 - score_list.cpu(), score_list.cpu()], axis=1))})
         else:
             edge_true = batch.y.sum()
             edge_true_positive = (batch.y.bool() & cut_list).sum().float()
-            print(batch.y[:10000].sum())
-            self.logger.experiment.log({"roc" : wandb.plot.roc_curve( batch.y.cpu(), torch.stack([1 - score_list.cpu(), score_list.cpu()], axis=1))})
 
 
-        result.log_dict({'eff': torch.tensor(edge_true_positive/edge_true), 'pur': torch.tensor(edge_true_positive/edge_positive)})
-        
-        return result
+        self.log_dict({
+                'eff': torch.tensor(edge_true_positive/edge_true),
+                'pur': torch.tensor(edge_true_positive/edge_positive)})

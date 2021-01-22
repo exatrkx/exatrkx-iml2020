@@ -112,7 +112,7 @@ class EmbeddingInferenceCallback(Callback):
         sel_idx = R_dist[e_spatial[0]] <= R_dist[e_spatial[1]]
         
         batch.e_radius = e_spatial[:, sel_idx]
-        batch.y = y_cluster.float()[sel_idx]
+        batch.y = torch.from_numpy(y_cluster).float()[sel_idx]
 
         return batch
 

@@ -6,7 +6,12 @@ Training GNN in HPC using Horovod
 import tensorflow as tf
 from tensorflow.compat.v1 import logging
 logging.info("TF Version:{}".format(tf.__version__))
-import horovod.tensorflow as hvd
+try:
+    import horovod.tensorflow as hvd
+    no_horovod = False
+except ModuleNotFoundError:
+    logging.warning("No horvod module, cannot perform distributed training")
+    no_horovod = True
 
 
 # tf.config.optimizer.set_jit(True)
@@ -37,7 +42,7 @@ from exatrkx import utils_dir
 prog_name = os.path.basename(sys.argv[0])
 
 def init_workers(distributed=False):
-    if distributed:
+    if distributed and not no_horovod:
         hvd.init()
         assert hvd.mpi_threads_supported()
         from mpi4py import MPI
