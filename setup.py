@@ -22,7 +22,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "pytorch-lightning==1.0.2",
-        "faiss-gpu",
+        "faiss-gpu==1.6.3",
         'trackml@ https://github.com/LAL/trackml-library/tarball/master#egg=trackml-3',
         "graph_nets>=1.1",
         # "tensorflow",
