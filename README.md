@@ -22,7 +22,12 @@ Dependencies not listed in the `setup.py` are tabulated below. We are referring 
 We prepared a script to install the `torch-geometric`, which can be executed as `install_geometric.sh cu101 1.6.0` where the first argument `cu101` is the CUDA version and the second is the `pytorch` version.
 
 ## Pipelines
-The program saves intermediate files after each processing step and we organize those outputs with a predefined structure. **Users have to assign two environment variables**: `TRKXINPUTDIR` for tracking input data pointing to the csv files for each event and the `detector.csv` file should be at its uplevel folder; `TRKXOUTPUTDIR` for saving output files. It can be done either via `export TRKXINPUTDIR=my_input_dir` and `export TRKXOUTPUTDIR=my-output-dir`
+The program saves intermediate files after each processing step and we organize those outputs with a predefined structure. **Users have to assign two environment variables**: `TRKXINPUTDIR` for tracking input data pointing to the csv files for each event and the `detector.csv` file should be at its uplevel folder; `TRKXOUTPUTDIR` for saving output files. It can be done either in bash via `export TRKXINPUTDIR=my-input-dir` and `export TRKXOUTPUTDIR=my-output-dir` or in python script via 
+```python
+import os
+os.environ['TRKXINPUTDIR'] = "my-input-dir"
+os.environ['TRKXOUTPUTDIR'] = "my-output-dir"
+```
 
 ### Preprocessing
 It reads input files, constructs cell features and more importantly figures out truth connections (edges) between hits from the same track.
