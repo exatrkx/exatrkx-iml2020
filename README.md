@@ -14,8 +14,8 @@ pip install -e .
 Dependencies not listed in the `setup.py` are tabulated below. We are referring to their webpage for detailed installation instructions.
 
 * [pytorch](https://pytorch.org/get-started/locally/) for embedding learning and filtering
-* [torch-geometric](https://github.com/rusty1s/pytorch_geometric#installation) 
-* [tensorflow](https://www.tensorflow.org/install) for GNN
+* [torch-geometric](https://github.com/rusty1s/pytorch_geometric#installation) for GNN in Pytorch
+* [tensorflow](https://www.tensorflow.org/install) for GNN in TensorFlow
 * [mpi4py](https://mpi4py.readthedocs.io/en/stable/install.html) for distributed training
 * [horovod](https://github.com/horovod/horovod#install) for distributed training
 
