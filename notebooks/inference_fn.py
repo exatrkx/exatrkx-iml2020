@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 import os
+import time
 os.environ['TRKXINPUTDIR'] = '/global/cscratch1/sd/alazar/trackml/data/train_100_events/' # better change to your copy of the dataset.
 os.environ['TRKXOUTPUTDIR'] = '../run200' # change to your own directory
 
@@ -9,6 +10,7 @@ import pandas as pd
 
 # 3rd party
 import torch
+from torch_geometric.data import Data
 import tensorflow as tf
 import sonnet as snt
 from graph_nets import utils_tf
@@ -47,7 +49,9 @@ def gnn_track_finding(
     # frac_reco_matched, frac_truth_matched = 0.5, 0.5 # parameters for track matching
 
 
-    data = torch.dataset(x=x, cell_data=cell_data)
+    data = Data(
+            x=torch.from_numpy(x).float(),
+            cell_data=torch.from_numpy(cell_data).float())
 
     # ### Evaluating Embedding
     # In[9]:
@@ -157,13 +161,15 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="perform inference")
     add_arg = parser.add_argument
-    add_arg("event_file", help="event id")
-    add_arg('detector_path', help='detector path')
+    add_arg("event_id", help="event id", type=int)
+    add_arg('--detector-dir', help='detector path',
+            default='/global/cfs/cdirs/m3443/data/trackml-kaggle/detectors.csv'
+    )
+    add_arg("--input-dir", help='input directory', default='/global/cfs/cdirs/m3443/data/trackml-kaggle/train_all')
     args = parser.parse_args()
 
-    # evtid = args.event_id
-    # event_file = os.path.join(utils_dir.inputdir, 'event{:09}'.format(evtid))
-    event_file = args.event_file
+    evtid = args.event_id
+    event_file = os.path.join(args.input_dir, 'event{:09}'.format(evtid))
     hits, particles, truth = load_event(event_file, parts=['hits', 'particles', 'truth'])
 
     r = np.sqrt(hits.x**2 + hits.y**2)
@@ -172,12 +178,17 @@ if __name__ == "__main__":
 
     from exatrkx.src.processing.utils.detector_utils import load_detector
     from exatrkx.src.processing.utils.cell_utils import get_one_event
-    detector_orig, detector_proc = load_detector(args.detector_path)
+    detector_orig, detector_proc = load_detector(args.detector_dir)
     angles = get_one_event(event_file, detector_orig, detector_proc)
     hits = hits.merge(angles, on='hit_id')
 
     cell_features = ['cell_count', 'cell_val', 'leta', 'lphi', 'lx', 'ly', 'lz', 'geta', 'gphi']
-    x = hits[['r', 'phi', 'z']]
-    cell_data = hits[cell_features]
+    x = hits[['r', 'phi', 'z']].to_numpy()
+    cell_data = hits[cell_features].to_numpy()
 
-    gnn_track_finding(x, cell_data)
+    print("start track finding")
+    start_time = time.time()
+    tracks = gnn_track_finding(x, cell_data)
+    end_time = time.time()
+    print(tracks)
+    print("total {:.2} seconds".format(end_time - start_time))
