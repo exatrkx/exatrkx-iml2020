@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
+import os
+os.environ['TRKXINPUTDIR'] = '/global/cscratch1/sd/alazar/trackml/data/train_100_events/' # better change to your copy of the dataset.
+os.environ['TRKXOUTPUTDIR'] = '../run200' # change to your own directory
 
 import numpy as np
 import pandas as pd
