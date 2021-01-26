@@ -29,7 +29,7 @@ from exatrkx.scripts.tracks_from_gnn import prepare as prepare_labeling
 from exatrkx.scripts.tracks_from_gnn import clustering as dbscan_clustering
 
 def gnn_track_finding(
-    x, cell_data,
+    hid, x, cell_data,
     embed_ckpt_dir='/global/cfs/cdirs/m3443/data/lightning_models/embedding/checkpoints/epoch=10.ckpt',
     filter_ckpt_dir='/global/cfs/cdirs/m3443/data/lightning_models/filtering/checkpoints/epoch=92.ckpt',
     gnn_ckpt_dir='/global/cfs/cdirs/m3443/data/lightning_models/gnn',
@@ -50,8 +50,9 @@ def gnn_track_finding(
 
 
     data = Data(
+            hid=torch.from_numpy(hid),
             x=torch.from_numpy(x).float(),
-            cell_data=torch.from_numpy(cell_data).float())
+            cell_data=torch.from_numpy(cell_data).float()).to(device)
 
     # ### Evaluating Embedding
     # In[9]:
@@ -94,7 +95,7 @@ def gnn_track_finding(
     f_model.eval()
 
     emb = None # embedding information was not used in the filtering stage.
-    chunks = 8
+    chunks = 10
     output_list = []
     for j in range(chunks):
         subset_ind = torch.chunk(torch.arange(e_spatial.shape[1]), chunks)[j]
@@ -109,7 +110,10 @@ def gnn_track_finding(
 
     # The filtering network assigns a score to each edge. 
     # In the end, edges with socres > `filter_cut` are selected to construct graphs.
-    edge_list = e_spatial[:, output.to('cpu') > f_model.hparams['filter_cut']]
+    # edge_list = e_spatial[:, output.to('cpu') > f_model.hparams['filter_cut']]
+    print(f_model.hparams['filter_cut'])
+    edge_list = e_spatial[:, output > f_model.hparams['filter_cut']]
+    print(edge_list.shape)
 
     # ### Form a graph
     # Now moving TensorFlow for GNN inference.
@@ -144,17 +148,23 @@ def gnn_track_finding(
     status = checkpoint.restore(ckpt_manager.checkpoints[ckpt_idx]).expect_partial()
 
     # clean up GPU memory
+    del e_spatial
     del e_model
     del f_model
     gc.collect()
-    torch.cuda.empty_cache()
+    if device == 'cuda':
+        torch.cuda.empty_cache()
 
     outputs_gnn = model(input_graph, num_processing_steps_tr)
     output_graph = outputs_gnn[-1]
 
     # ### Track labeling
     input_matrix = prepare_labeling(tf.squeeze(output_graph.edges).cpu().numpy(), senders, receivers, n_nodes)
-    predict_tracks = dbscan_clustering(data.hid.cpu(), input_matrix, dbscan_epsilon, dbscan_minsamples)
+    predict_track_df = dbscan_clustering(data.hid.cpu(), input_matrix, dbscan_epsilon, dbscan_minsamples)
+    trkx_groups = predict_track_df.groupby(['track_id'])
+    all_trk_ids = np.unique(predict_track_df.track_id)
+    n_trkxs = all_trk_ids.shape[0]
+    predict_tracks = [trkx_groups.get_group(all_trk_ids[idx])['hit_id'].to_numpy().tolist() for idx in range(n_trkxs)]
     return predict_tracks
 
 if __name__ == "__main__":
@@ -175,6 +185,8 @@ if __name__ == "__main__":
     r = np.sqrt(hits.x**2 + hits.y**2)
     phi = np.arctan2(hits.y, hits.x)
     hits = hits.assign(r=r, phi=phi)
+    hits = hits.merge(truth, on='hit_id')
+    hits = hits[hits['particle_id'] != 0]
 
     from exatrkx.src.processing.utils.detector_utils import load_detector
     from exatrkx.src.processing.utils.cell_utils import get_one_event
@@ -183,12 +195,21 @@ if __name__ == "__main__":
     hits = hits.merge(angles, on='hit_id')
 
     cell_features = ['cell_count', 'cell_val', 'leta', 'lphi', 'lx', 'ly', 'lz', 'geta', 'gphi']
-    x = hits[['r', 'phi', 'z']].to_numpy()
+    feature_scale = np.array([1000, np.pi, 1000])
+    hid = hits['hit_id'].to_numpy()
+    x = hits[['r', 'phi', 'z']].to_numpy() / feature_scale
     cell_data = hits[cell_features].to_numpy()
+
+    print("hid:", hid.shape)
+    print("x:", x.shape)
+    print("cell data:", cell_data.shape)
 
     print("start track finding")
     start_time = time.time()
-    tracks = gnn_track_finding(x, cell_data)
+    tracks = gnn_track_finding(hid, x, cell_data)
     end_time = time.time()
-    print(tracks)
+    print(tracks[0])
+    print(tracks[1])
     print("total {:.2} seconds".format(end_time - start_time))
+
+    
