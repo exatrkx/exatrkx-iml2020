@@ -1,6 +1,7 @@
 # Tracking-ML-Exa.TrkX
 Building input graphs for Graph Neural Network (GNN) is based on the embedding learning and filtering with multilayer perceptrons, both of which are implemented in [Pytorch](https://pytorch.org/get-started/locally/). The GNN is implemented in the TensorFlow with the [graph_nets](https://github.com/deepmind/graph_nets) package.
 
+To quickly get started, you can visit our [walk-through notebook](https://github.com/exatrkx/exatrkx-iml2020/blob/main/notebooks/WalkThroughGNN4Tracking.ipynb).
 <!-- [Documentation available here.](https://hsf-reco-and-software-triggers.github.io/Tracking-ML-Exa.TrkX/) -->
 ## Installation
 
