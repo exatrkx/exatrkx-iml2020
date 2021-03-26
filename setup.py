@@ -21,6 +21,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
+        "torch==1.7.1",
         "pytorch-lightning==1.0.2",
         "faiss-gpu==1.6.3",
         'trackml@ https://github.com/LAL/trackml-library/tarball/master#egg=trackml-3',

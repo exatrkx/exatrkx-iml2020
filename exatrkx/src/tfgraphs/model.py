@@ -12,6 +12,7 @@ import tensorflow as tf
 from graph_nets import modules
 from graph_nets import utils_tf
 from graph_nets import blocks
+from graph_nets.graphs import GraphsTuple 
 import sonnet as snt
 
 NUM_LAYERS = 2
