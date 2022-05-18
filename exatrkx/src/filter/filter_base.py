@@ -39,9 +39,9 @@ class FilterBase(LightningModule):
         Initialise the Lightning Module that can scan over different filter training regimes
         '''
         # Assign hyperparameters
-        self.hparams = hparams
-        self.hparams['input_dir'] = utils_dir.embedding_outdir
-        self.hparams['output_dir'] = utils_dir.filtering_outdir
+        self.save_hyperparameters( hparams )
+        self._set_hparams({'input_dir': utils_dir.embedding_outdir})
+        self._set_hparams({'output_dir': utils_dir.filtering_outdir})
 
     def setup(self, stage):
         datatypes = ["train", "val", "test"]
@@ -144,7 +144,7 @@ class FilterBase(LightningModule):
             'val_pur': edge_true_positive/edge_positive}, prog_bar=True)
 
 
-    def optimizer_step(self, current_epoch, batch_nb, optimizer, optimizer_idx, second_order_closure=None, on_tpu=False, using_native_amp=False, using_lbfgs=False):
+    def optimizer_step(self, current_epoch, batch_nb, optimizer, optimizer_idx, optimizer_closure=None, second_order_closure=None, on_tpu=False, using_native_amp=False, using_lbfgs=False):
         # warm up lr
         if (self.hparams["warmup"] is not None) and (self.trainer.global_step < self.hparams["warmup"]):
             lr_scale = min(1., float(self.trainer.global_step + 1) / self.hparams["warmup"])
@@ -152,7 +152,7 @@ class FilterBase(LightningModule):
                 pg['lr'] = lr_scale * self.hparams["lr"]
 
         # update params
-        optimizer.step()
+        optimizer.step(optimizer_closure)
         optimizer.zero_grad()
 
 

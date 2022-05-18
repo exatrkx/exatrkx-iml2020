@@ -6,11 +6,15 @@ To quickly get started, you can visit our [walk-through notebook](https://github
 ## Installation
 
 ```bash
-conda create --name exatrkx python=3.8
+conda create --name exatrkx python=3.8 pytorch torchvision torchaudio faiss-gpu cudatoolkit=11.3 matplotlib jupyter -c pytorch
+
+conda activate exatrkx
 
 pip install --upgrade pip
 
 pip install -e .
+
+pip install pytorch_lightning tensorflow graph_nets
 ```
 Dependencies not listed in the `setup.py` are tabulated below. We are referring to their webpage for detailed installation instructions.
 
@@ -20,7 +24,20 @@ Dependencies not listed in the `setup.py` are tabulated below. We are referring 
 * [mpi4py](https://mpi4py.readthedocs.io/en/stable/install.html) for distributed training
 * [horovod](https://github.com/horovod/horovod#install) for distributed training
 
-We prepared a script to install the `torch-geometric`, which can be executed as `install_geometric.sh cu101 1.6.0` where the first argument `cu101` is the CUDA version and the second is the `pytorch` version.
+We prepared a script to install the `torch-geometric`, which can be executed as `install_geometric.sh cu113 1.11.0` where the first argument `cu113` is the CUDA version and the second is the `pytorch` version.
+
+You can find out the cuda and pytorch version by running 
+
+```
+python -c "import torch; print(torch.__version__, torch.version.cuda)"
+```
+and then run 
+```
+export $CUDA_VERSION="your-cuda-version"
+export $TORCH_VERSION="your-torch-version"
+install_geometric.sh $CUDA_VERSION $TORCH_VERSION
+```
+where the cuda version must be in cu1xx format.
 
 ## Pipelines
 The program saves intermediate files after each processing step and we organize those outputs with a predefined structure. **Users have to assign two environment variables**: `TRKXINPUTDIR` for tracking input data pointing to the csv files for each event and the `detector.csv` file should be at its uplevel folder; `TRKXOUTPUTDIR` for saving output files. It can be done either in bash via `export TRKXINPUTDIR=my-input-dir` and `export TRKXOUTPUTDIR=my-output-dir` or in python script via 

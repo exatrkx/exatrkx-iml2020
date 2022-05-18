@@ -90,5 +90,5 @@ def swig_ptr_from_LongTensor(x):
     import faiss
     assert x.is_contiguous()
     assert x.dtype == torch.int64, 'dtype=%s' % x.dtype
-    return faiss.cast_integer_to_long_ptr(
+    return faiss.cast_integer_to_idx_t_ptr(
         x.storage().data_ptr() + x.storage_offset() * 8)
