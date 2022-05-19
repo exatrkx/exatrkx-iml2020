@@ -21,10 +21,13 @@ class FeatureStore(LightningDataModule):
 
     def __init__(self, hparams):
         super().__init__()
-        self.hparams = hparams
+        self.save_hyperparameters(hparams)
 
-        self.hparams['input_dir'] = self.input_dir = utils_dir.inputdir
-        self.hparams['output_dir'] = self.output_dir = utils_dir.feature_outdir
+        self.input_dir = utils_dir.inputdir
+        self._set_hparams({'input_dir': utils_dir.inputdir}) 
+        
+        self.output_dir = utils_dir.feature_outdir
+        self._set_hparams({'output_dir': self.output_dir})
         self.detector_path = utils_dir.detector_path
         self.n_files = self.hparams['n_files']
 
@@ -43,6 +46,7 @@ class FeatureStore(LightningDataModule):
 
         # Split the input files by number of tasks and select my chunk only
         all_events = np.array_split(all_events, self.n_tasks)[self.task]
+        print(all_events)
 
         # Define the cell features to be added to the dataset
 

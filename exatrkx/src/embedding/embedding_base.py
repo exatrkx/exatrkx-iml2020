@@ -42,9 +42,9 @@ class EmbeddingBase(LightningModule):
         Initialise the Lightning Module that can scan over different embedding training regimes
         '''
         # Assign hyperparameters
-        self.hparams = hparams
-        self.hparams['input_dir'] = utils_dir.feature_outdir
-        self.hparams['output_dir'] = utils_dir.embedding_outdir
+        self.save_hyperparameters( hparams )
+        self._set_hparams({'input_dir': utils_dir.feature_outdir})
+        self._set_hparams({'output_dir': utils_dir.embedding_outdir})
         self.clustering = getattr(utils_torch, hparams['clustering'])
 
     def setup(self, stage):
@@ -179,7 +179,7 @@ class EmbeddingBase(LightningModule):
             'val_pur': torch.tensor(cluster_true_positive/cluster_positive)}, prog_bar=True)
 
 
-    def optimizer_step(self, current_epoch, batch_nb, optimizer, optimizer_idx,
+    def optimizer_step(self, current_epoch, batch_nb, optimizer, optimizer_idx,optimizer_closure=None,
                     second_order_closure=None, on_tpu=False, using_native_amp=False, using_lbfgs=False):
         # warm up lr
         if (self.hparams["warmup"] is not None) and (self.trainer.global_step < self.hparams["warmup"]):
@@ -188,5 +188,5 @@ class EmbeddingBase(LightningModule):
                 pg['lr'] = lr_scale * self.hparams["lr"]
 
         # update params
-        optimizer.step()
+        optimizer.step(optimizer_closure)
         optimizer.zero_grad()
